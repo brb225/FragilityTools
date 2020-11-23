@@ -1,4 +1,5 @@
-devtools::load_all()
+library(FragilityTools)
+
 library(dplyr)
 library(magrittr)
 library(ggplot2)

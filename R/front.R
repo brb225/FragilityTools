@@ -881,10 +881,12 @@ glm.fi <- function(formula, family, data, max.step=1, alpha=.05, cl=NULL, verbos
 #' @param group a factor with levels representing group membership
 #' @param test a string specifying the test type, default is 'logrank'
 #' @param max.step a numeric for the maximum allowable change of the time outcome for each
-#' patient; note that times will be thresholded to 0 if negative
+#' patient. Default 0.
 #' @param cl a cluster from the `parallel` package, used to compute fragility index over
 #' each modified observation at each stage of the greedy algorithm
 #' @param alpha a number for the size of test
+#' @param min.time the minimum time for replacement times. Default 0.
+#' @param max.time the maximum time for replacement times. Default Inf.
 #' @param tau an optional parameter for the rmst difference test
 #' @param verbose a logical value for whether to print status updates while running
 #' @return the output of greedy.fi for the given test
@@ -896,8 +898,8 @@ glm.fi <- function(formula, family, data, max.step=1, alpha=.05, cl=NULL, verbos
 #' parallel::stopCluster(cl)
 #'
 #' @export
-surv.fi <- function(time, status, group, test='logrank', max.step=NULL, cl=NULL, alpha=.05, tau=NULL, verbose=FALSE) {
-  if (is.null(max.step)) max.step <- 0 # default is 0 time change allowed, ie swap between censor and event
+surv.fi <- function(time, status, group, test='logrank', max.step=0, cl=NULL, alpha=.05,
+                    min.time=0, max.time=Inf, tau=NULL, verbose=FALSE) {
 
   Y <- data.frame('time'=time, 'status'=status)
   X <- data.frame('group'=group)
@@ -919,7 +921,7 @@ surv.fi <- function(time, status, group, test='logrank', max.step=NULL, cl=NULL,
     }
   }
 
-  get.replacements <- list(function(y,x,rn,Y,X) pmax(0, y+c(-1,1)*max.step), # doesn't let times go negative
+  get.replacements <- list(function(y,x,rn,Y,X) pmin(pmax(min.time, y+c(-1,1)*max.step), max.time), # doesn't let times go negative
                            function(y,x,rn,Y,X) setdiff(unique(Y[[2]]), y)
   )
 
@@ -1064,6 +1066,7 @@ draw.binom <- function(ss, theta1=.3, theta2=.7, row.prop=1/2, matrix=FALSE) {
 
   # get dfs if requested
   mat <- matrix(c(xx,yy,m-xx,n-yy),nrow=2)
+  rownames(mat) <- 1:2
 
   if (matrix) {
     return(mat)

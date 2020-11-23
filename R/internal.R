@@ -86,8 +86,10 @@ bin.fi.exact <- function(x, get.p, alpha = 0.05, max.f = Inf, verbose=FALSE) {
 
   rev <- (pp>=alpha)
   # get in same format as greedy.fi
-  return(list('FI'=row.frag.index[1,3]*(-1)^rev, 'p_value_sequence'=c(pp, row.frag.index[1,4]), 'reverse'=rev,
-              'num_patients'=sum(x), 'patients'=row.frag.index[,1:2], 'old_responses'=NA, 'new_responses'=NA))
+  return(list('FI'=row.frag.index[1,3]*(-1)^rev, 'p_value_sequence'=c(pp, row.frag.index[1,4]),
+              'reverse'=rev, 'num_patients'=sum(x),
+              'patients'=row.frag.index[,1:2],
+              'old_responses'=NA, 'new_responses'=NA))
 }
 
 #' Original FI, for binary data
@@ -101,36 +103,58 @@ bin.fi.exact <- function(x, get.p, alpha = 0.05, max.f = Inf, verbose=FALSE) {
 #'
 bin.fi.walsh <- function(mat, get.p, alpha=0.05) {
   start.p <- get.p(mat)
-  small.gr <- which.min(apply(mat, 1, sum))
+  group.sizes <- apply(mat, 1, sum)
+  smallest.grs <- unname(which(group.sizes==min(group.sizes)))
 
-  get.mod.p <- function(f) {
+  get.mod.p <- function(f, smallest.gr) {
     mod.mat <- mat
-    mod.mat[small.gr,] <- mod.mat[small.gr,]+c(-1,1)*f
+    mod.mat[smallest.gr,] <- mod.mat[smallest.gr,]+c(-1,1)*f
     return(get.p(mod.mat))
   }
-
-  end.p <- NA
-  for (f in 1:max(mat[small.gr,])) {
-    if (-mat[small.gr,2] <= f && f <= mat[small.gr,1]) {
-      p1 <- get.mod.p(f)
-      if ((p1-alpha)*(start.p-alpha)<0) {
-        end.p <- p1
-        break
+  do.grid.search <- function(smallest.gr) {
+    end.p <- NA
+    for (f in 1:max(mat[smallest.gr,])) {
+      if (-mat[smallest.gr,2] <= f && f <= mat[smallest.gr,1]) {
+        p1 <- get.mod.p(f, smallest.gr)
+        if ((p1-alpha)*(start.p-alpha)<0) {
+          end.p <- p1
+          break
+        }
+      }
+      if (-mat[smallest.gr,2] <= -f && -f <= mat[smallest.gr,1]) {
+        p2 <- get.mod.p(-f, smallest.gr)
+        if ((p2-alpha)*(start.p-alpha)<0) {
+          end.p <- p2
+          break
+        }
       }
     }
-    if (-mat[small.gr,2] <= -f && -f <= mat[small.gr,1]) {
-      p2 <- get.mod.p(-f)
-      if ((p2-alpha)*(start.p-alpha)<0) {
-        end.p <- p2
-        break
-      }
+    if (is.na(end.p)) f <- Inf
+    return(list(f=f, end.p=end.p))
+  }
+
+  pats <- c(0,0)
+  if (length(smallest.grs)==1) {
+    out <- do.grid.search(smallest.grs)
+    pats[smallest.grs] <- out$f # does this correctly handle the sign of f?
+  } else {
+    out1 <- do.grid.search(smallest.grs[1])
+    out2 <- do.grid.search(smallest.grs[2])
+    if (abs(out1$f)<=abs(out2$f)) {
+      out <- out1
+      pats[1] <- out1$f # does this correctly handle the sign of f?
+    } else {
+      out <- out2
+      pats[2] <- out2$f # does this correctly handle the sign of f?
     }
   }
-  if (is.na(end.p)) f <- Inf
+  f <- out$f
+  end.p <- out$end.p
 
   return(list('FI'=abs(f)*(-1)^(start.p>=alpha),'p_value_sequence'=c(start.p,end.p),
               'reverse'=(start.p>=alpha),'num_patients'=sum(mat),
-              'patients'=NA,'old_responses'=NA,'new_responses'=NA))
+              'patients'=pats,
+              'old_responses'=NA,'new_responses'=NA))
 }
 
 #' Find when an increasing function observed with noise crosses x-axis

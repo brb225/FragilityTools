@@ -57,7 +57,7 @@ df$min.power <- as.factor(df$min.power)
 
 ggplot(out2, aes(x=min.fi, y=fi_ss, shape=tau))+
   geom_point()+
-  xlab(TeX("$\\varphi'$, minimum tolerable FI"))+
+  xlab(TeX("$\\varphi'$, minimum tolerable fragility index"))+
   ylab('Required Sample size')+
   geom_hline(aes(yintercept=power_ss, linetype=min.power), df[1:2,])+
   #ggtitle('FAME: Sample size calculations accounting for the fragility index')+
