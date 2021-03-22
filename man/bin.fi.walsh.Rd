@@ -4,7 +4,7 @@
 \alias{bin.fi.walsh}
 \title{Original FI, for binary data}
 \usage{
-bin.fi.walsh(mat, get.p, alpha = 0.05)
+bin.fi.walsh(mat, get.p, alpha = 0.05, dir = "both")
 }
 \arguments{
 \item{mat}{a 2x2 matrix with groups on the rows}
@@ -12,11 +12,12 @@ bin.fi.walsh(mat, get.p, alpha = 0.05)
 \item{get.p}{a function which accepts a 2x2 matrix and outputs a p value}
 
 \item{alpha}{the p-value cutoff to reject, 0.05 by default}
+
+\item{dir}{a character, either "left", "right", or "both". The default is "both".}
 }
 \description{
 Original FI, for binary data
 }
 \examples{
-bin.fi.walsh(matrix(c(100,96,13,28),nrow=2), function(mat)fisher.test(mat)$p.value)
-
+bin.fi.walsh(matrix(c(100, 96, 13, 28), nrow = 2), function(mat) fisher.test(mat)$p.value)
 }

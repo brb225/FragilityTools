@@ -2,10 +2,7 @@
 
 S3method(min,fi.curve)
 export(bin.fi)
-export(bin.fi.walsh)
-export(binmeta.fi)
+export(bin.fi.incidence)
 export(equivalent_usual_parameters)
 export(general.fi.samplesize)
 export(get.rejection.rates)
-export(glm.fi)
-export(surv.fi)

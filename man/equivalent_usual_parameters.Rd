@@ -2,7 +2,7 @@
 % Please edit documentation in R/front.R
 \name{equivalent_usual_parameters}
 \alias{equivalent_usual_parameters}
-\title{Get equivalent params of traditional power calculation}
+\title{Get equivalent parameters in traditional power calculation}
 \usage{
 equivalent_usual_parameters(
   alpha,
@@ -20,26 +20,28 @@ equivalent_usual_parameters(
 )
 }
 \description{
-Get equivalent params of traditional power calculation
+Get equivalent parameters in traditional power calculation
 }
 \examples{
-get.p.val <- function (mat)
-{
- pearson.test.stata <- function(mat) {
-   n1 <- sum(mat[1, ])
-   n2 <- sum(mat[2, ])
-   p1 <- mat[1, 1]/n1
-   p2 <- mat[2, 1]/n2
-   pbar <- (n1 * p1 + n2 * p2)/(n1 + n2)
-   ts <- (p1 - p2)/sqrt(pbar * (1 - pbar) * (1/n1 + 1/n2))
-   p_value <- 2 * pnorm(abs(ts), lower.tail = FALSE)
-   return(ifelse(is.nan(p_value), 1, p_value))
- }
- suppressWarnings(p <- pearson.test.stata(mat))
- return(ifelse(is.na(p), 1, p))
+get.p.val <- function(mat) {
+  pearson.test.stata <- function(mat) {
+    n1 <- sum(mat[1, ])
+    n2 <- sum(mat[2, ])
+    p1 <- mat[1, 1] / n1
+    p2 <- mat[2, 1] / n2
+    pbar <- (n1 * p1 + n2 * p2) / (n1 + n2)
+    ts <- (p1 - p2) / sqrt(pbar * (1 - pbar) * (1 / n1 + 1 / n2))
+    p_value <- 2 * pnorm(abs(ts), lower.tail = FALSE)
+    return(ifelse(is.nan(p_value), 1, p_value))
+  }
+  suppressWarnings(p <- pearson.test.stata(mat))
+  return(ifelse(is.na(p), 1, p))
 }
-get.sample.alt.f <- function (ss, delta) draw.binom(ss, pi1 = 0.08, pi2 = 0.08 + delta,
-row.prop = 1/2, matrix = TRUE)
-equivalent_usual_parameters(0.05, .8, .06, 850, get.sample.alt.f, get.p.val=get.p.val)
-
+get.sample.alt.f <- function(ss, delta) {
+  draw.binom(ss,
+    theta1 = 0.08, theta2 = 0.08 + delta,
+    row.prop = 1 / 2, matrix = TRUE
+  )
+}
+equivalent_usual_parameters(0.05, .8, .06, 850, get.sample.alt.f, get.p.val = get.p.val)
 }

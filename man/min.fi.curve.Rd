@@ -2,7 +2,7 @@
 % Please edit documentation in R/front.R
 \name{min.fi.curve}
 \alias{min.fi.curve}
-\title{???????????????????????????????????}
+\title{Loops over general.fi.samplesize for a grid of sample sizes.}
 \usage{
 \method{min}{fi.curve}(
   min.fi,
@@ -75,16 +75,18 @@ Loops over general.fi.samplesize for a grid of sample sizes.
 get.p.val <- function(X, Y) {
   x <- X[[1]]
   y <- Y[[1]]
-  mat <- matrix(nrow=2,ncol=2)
-  mat[1,1] <- sum((x==0)&(y==0))
-  mat[1,2] <- sum((x==0)&(y==1))
-  mat[2,1] <- sum((x==1)&(y==0))
-  mat[2,2] <- sum((x==1)&(y==1))
+  mat <- matrix(nrow = 2, ncol = 2)
+  mat[1, 1] <- sum((x == 0) & (y == 0))
+  mat[1, 2] <- sum((x == 0) & (y == 1))
+  mat[2, 1] <- sum((x == 1) & (y == 0))
+  mat[2, 2] <- sum((x == 1) & (y == 1))
   fisher.test(mat)$p.value
 }
-get.replacements <- list(function(y,x,rn,Y,X) setdiff(unique(Y[[1]]), y))
+get.replacements <- list(function(y, x, rn, Y, X) setdiff(unique(Y[[1]]), y))
 get.sample <- draw.binom
 
-out <- min.fi.curve(min.fi=seq(0, 10, by=5), get.p.val=get.p.val, get.replacements=get.replacements,
-get.sample=get.sample)
+out <- min.fi.curve(
+  min.fi = seq(0, 10, by = 5), get.p.val = get.p.val, get.replacements = get.replacements,
+  get.sample = get.sample, niters = 1, algorithm = "greedy"
+)
 }

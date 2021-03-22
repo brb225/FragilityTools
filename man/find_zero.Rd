@@ -49,5 +49,5 @@ argument is increased exponentially until it becomes nonnegative, then
 a binary search is performed.
 }
 \examples{
-find_zero(function(x) x-100+rnorm(1), fz.verbose=FALSE)
+find_zero(function(x) x - 100 + rnorm(1), fz.verbose = FALSE)
 }

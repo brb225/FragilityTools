@@ -22,15 +22,16 @@ percentages (in increments of roughly ten percent)}
 a fragility index
 }
 \description{
-Exactly alcululate a fragility index using for the fisher exact test using a table
+Exactly alcululate a fragility index using for the fisher exact test using a table.
+Do a grid search over all FI values <= some value.
 }
 \details{
 Do not call this function: use bin.fi with option 'exact' instead
 }
 \examples{
-x <- matrix(nrow=2,byrow=TRUE,rgeom(4, 1/50))
-colnames(x) <- c('event', 'nonevent')
-rownames(x) <- c('control', 'treatment')
+x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))
+colnames(x) <- c("event", "nonevent")
+rownames(x) <- c("control", "treatment")
 get.p <- function(tab) fisher.test(tab)$p.value
-bin.fi.exact(x)
+bin.fi.exact(x, get.p)
 }

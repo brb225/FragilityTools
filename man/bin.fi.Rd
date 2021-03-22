@@ -10,11 +10,12 @@ bin.fi(
   Y = NULL,
   alg = "greedy",
   test = "fisher",
-  max.f = Inf,
+  fi.start = NULL,
   alpha = 0.05,
   verbose = FALSE,
   warm.start = TRUE,
-  delta = NULL
+  delta = NULL,
+  min.p = 0
 )
 }
 \arguments{
@@ -24,12 +25,12 @@ bin.fi(
 
 \item{Y}{a dataframe representing the responses}
 
-\item{alg}{a string specifying the FI algorithm, 'greedy' (default), 'exact', or 'walsh'}
+\item{alg}{a string specifying the FI algorithm, 'greedy' (default), 'exact', 'original', or 'original.bothdir'}
 
 \item{test}{a string specifying the test, defaulting to 'fisher' for the Fisher exact test.
 An alternative is 'fisher.midp' and 'pearson.chisq'.}
 
-\item{max.f}{the maximum fragility index considered}
+\item{fi.start}{the starting fragility index considered in the exact algorithm.}
 
 \item{alpha}{a number for the size of test}
 
@@ -40,9 +41,12 @@ a greedy algorithm will be ran first to upper bound the search for the exact alg
 Set to FALSE to only run the exact algorithm.}
 
 \item{delta}{the noninferiority margin for when test='ni.normal'}
+
+\item{min.p}{the minimum probability of allowable outcome changes, defaults to 0 (allowing all changes).
+Note that alg='original' or alg='original.bothdir' does not support this option.}
 }
 \value{
-the output of greedy.fi for the given test
+the fragility index and other values, depending on which algorithm is specified.
 }
 \description{
 Estimate a fragility index using for the fisher exact test using a table
@@ -52,9 +56,13 @@ This is a function which is a wrapper around internal functions which calculate
 the fragility index for different data types and test specifications.
 }
 \examples{
-x <- matrix(nrow=2,byrow=TRUE,rgeom(4, 1/50))
-colnames(x) <- c('event', 'nonevent')
-rownames(x) <- c('control', 'treatment')
-out <- bin.fi(data.table=x, alg='exact')
-
+x <- matrix(nrow = 2, byrow = TRUE, c(5, 100, 30, 70))
+colnames(x) <- c("event", "nonevent")
+rownames(x) <- c("treatment", "control")
+p.grid <- seq(0, 1, by = .01)
+fi.grid <- sapply(p.grid, function(p) bin.fi(data.table = x, alg = "greedy", min.p = p, verbose = FALSE)$FI)
+ggplot2::qplot(p.grid[fi.grid < Inf], fi.grid[fi.grid < Inf],
+  xlab = "Likelihood bound",
+  ylab = "Fragility index", xlim = c(0, 1), main = "Fisher exact test fragility indices (n=205)"
+)
 }

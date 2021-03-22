@@ -82,16 +82,17 @@ thresholds.
 get.p.val <- function(X, Y) {
   x <- X[[1]]
   y <- Y[[1]]
-  mat <- matrix(nrow=2,ncol=2)
-  mat[1,1] <- sum((x==0)&(y==0))
-  mat[1,2] <- sum((x==0)&(y==1))
-  mat[2,1] <- sum((x==1)&(y==0))
-  mat[2,2] <- sum((x==1)&(y==1))
+  mat <- matrix(nrow = 2, ncol = 2)
+  mat[1, 1] <- sum((x == 0) & (y == 0))
+  mat[1, 2] <- sum((x == 0) & (y == 1))
+  mat[2, 1] <- sum((x == 1) & (y == 0))
+  mat[2, 2] <- sum((x == 1) & (y == 1))
   fisher.test(mat)$p.value
 }
-get.replacements <- list(function(y,x,rn,Y,X) setdiff(unique(Y[[1]]), y))
+get.replacements <- list(function(y, x, rn, Y, X) setdiff(unique(Y[[1]]), y))
 
-ss <- general.fi.samplesize(min.fi=10, min.power=.8, get.p.val=get.p.val,
-get.replacements=get.replacements, get.sample=draw.binom, nsim=25, verbose=TRUE)
-
+ss <- general.fi.samplesize(
+  min.fi = 10, min.power = .8, get.p.val = get.p.val, niters = 1,
+  get.replacements = get.replacements, get.sample = draw.binom, nsim = 25, verbose = TRUE
+)
 }

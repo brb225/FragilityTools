@@ -41,6 +41,25 @@ a length 4 vector with the size and power of both tests.
 Get rejection rates of the two main tests
 }
 \examples{
-get.rejection.rates(TODO)
+get.p.val <- function(mat) {
+  pearson.test.stata <- function(mat) {
+    n1 <- sum(mat[1, ])
+    n2 <- sum(mat[2, ])
+    p1 <- mat[1, 1] / n1
+    p2 <- mat[2, 1] / n2
 
+    pbar <- (n1 * p1 + n2 * p2) / (n1 + n2)
+    ts <- (p1 - p2) / sqrt(pbar * (1 - pbar) * (1 / n1 + 1 / n2))
+    p_value <- 2 * pnorm(abs(ts), lower.tail = FALSE)
+    return(ifelse(is.nan(p_value), 1, p_value))
+  }
+  suppressWarnings(p <- pearson.test.stata(mat))
+
+  return(ifelse(is.na(p), 1, p))
+}
+
+get.sample.null <- function(ss) draw.binom(ss, theta1 = .14, theta2 = .14, row.prop = 1 / 2, matrix = TRUE)
+get.sample.alt <- function(ss) draw.binom(ss, theta1 = .14, theta2 = .08, row.prop = 1 / 2, matrix = TRUE)
+
+get.rejection.rates(get.p.val, NULL, get.sample.null, get.sample.alt, 5, 100, algorithm = "walsh")
 }

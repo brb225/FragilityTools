@@ -1,6 +1,6 @@
 Package: FragilityTools
 Title: Toolbox For Using The Fragility Index
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: c(
     person("Baer", "Benjamin", email = "brb225@cornell.edu", role = c("aut", "cre")),
     person("Wells", "Martin", email = "mtw1@cornell.edu", role = "aut"))
@@ -19,7 +19,9 @@ Imports:
     plyr,
     dplyr,
     meta,
-    BiasedUrn
+    BiasedUrn,
+    ggplot2,
+    latex2exp
 Suggests: 
     knitr,
     rmarkdown,

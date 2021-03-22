@@ -15,3 +15,6 @@ list containing two one-column data frames X and Y
 \description{
 Convert a 2x2 table to a X,Y data frames
 }
+\examples{
+mat_to_xy(matrix(1:4, nrow = 2))
+}
