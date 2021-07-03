@@ -48,6 +48,7 @@ get.sample.alt.f <- function(ss, delta) draw.binom(ss, theta1 = my.theta1, theta
 #### set up simulation parameters ####
 k <- 6
 eps <- .01
+niters <- 150
 
 phi.grid <- seq(from = 0, to = 30, by = 5)
 tau.grid.short <- c(.5, .2)
@@ -67,7 +68,7 @@ parallel::clusterExport(cl, varlist = c(
   "chosen.phi", "chosen.tau", "chosen.pi", "eps", "get.sample.alt.f", "nsim_low",
   "nsim_high"
 ), envir = environment())
-source("exec/example_simulation_script.R", print.eval = TRUE)
+source("exec/sscalc_example_simulation_script.R", print.eval = TRUE)
 parallel::stopCluster(cl)
 
 #### print output ####

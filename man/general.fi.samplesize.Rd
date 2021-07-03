@@ -20,7 +20,7 @@ general.fi.samplesize(
   tau = 1/2,
   nsim = 30,
   eps = 0.1,
-  algorithm = "greedy"
+  algorithm = "walsh"
 )
 }
 \arguments{
@@ -38,12 +38,8 @@ sample_size_init_power is taken to produce the desired power.}
 
 \item{get.p.val}{a function that inputs X and Y and returns a p value}
 
-\item{get.replacements}{a list of of function that inputs a response, covariate, and row name and
-outputs the replacements to be considered in the algorithm (one function for each response column).
-If there is only one column, a function can be passed in instead of a list containing the one function.}
-
 \item{get.sample}{a function which inputs a sample size and outputs a sample, with
-the covariates in a dataframe and the response in a dataframe}
+the covariates in a dataframe X and the response in a dataframe Y}
 
 \item{gamma}{the power of n^{-1} in the gradient descent in the Polyak-Ruppert averaging.
 The default is 0.60.}
@@ -61,16 +57,16 @@ the sample size calculation}
 \item{tau}{the quantile of FI to bound, default 1/2}
 
 \item{nsim}{the number of simulated draws to consider when estimating the power
-and expected fragility index}
+and expected fragility index quantile}
 
 \item{eps}{a parameter to control the error. The smaller is it, the more precise the
 output but the longer the function will take to run.}
 
 \item{algorithm}{A string specifying the algorithm to use to calculate fragility indices.
-The default is "greedy"}
+The default is "greedy". Alternatives include "walsh" for the algorithm originally used by Walsh et al. (2014).}
 }
 \value{
-the calculated sample sizes for the desired power and fragility index
+the length two numeric vector of the calculated sample sizes for the desired power and fragility index
 }
 \description{
 This function takes in a function to compute a p value and a function
@@ -79,20 +75,8 @@ produces a power and fragility index larger than the input
 thresholds.
 }
 \examples{
-get.p.val <- function(X, Y) {
-  x <- X[[1]]
-  y <- Y[[1]]
-  mat <- matrix(nrow = 2, ncol = 2)
-  mat[1, 1] <- sum((x == 0) & (y == 0))
-  mat[1, 2] <- sum((x == 0) & (y == 1))
-  mat[2, 1] <- sum((x == 1) & (y == 0))
-  mat[2, 2] <- sum((x == 1) & (y == 1))
-  fisher.test(mat)$p.value
-}
-get.replacements <- list(function(y, x, rn, Y, X) setdiff(unique(Y[[1]]), y))
+ss <- general.fi.sscurve(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
+get.p.val = function(m)fisher.test(m)$p.value, get.sample = function(ss) draw.binom(ss, matrix=TRUE),
+nsim = 10, niters = 2, verbose = FALSE)
 
-ss <- general.fi.samplesize(
-  min.fi = 10, min.power = .8, get.p.val = get.p.val, niters = 1,
-  get.replacements = get.replacements, get.sample = draw.binom, nsim = 25, verbose = TRUE
-)
 }

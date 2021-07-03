@@ -2,18 +2,21 @@
 % Please edit documentation in R/internal.R
 \name{mat_to_xy}
 \alias{mat_to_xy}
-\title{Convert a 2x2 table to a X,Y data frames}
+\title{Convert a 2x2 table into X,Y data frame format}
 \usage{
 mat_to_xy(mat, event.col = 1)
 }
 \arguments{
 \item{mat}{2x2 numeric matrix}
+
+\item{event.col}{either 1 or 2, specifying which column has events, by default 1}
 }
 \value{
 list containing two one-column data frames X and Y
 }
 \description{
-Convert a 2x2 table to a X,Y data frames
+This is a helper function since FragilityTools uses X,Y data frames by default,
+but uses 2x2 tables when possible for improved computational efficiency.
 }
 \examples{
 mat_to_xy(matrix(1:4, nrow = 2))

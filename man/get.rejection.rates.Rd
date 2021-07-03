@@ -2,11 +2,10 @@
 % Please edit documentation in R/front.R
 \name{get.rejection.rates}
 \alias{get.rejection.rates}
-\title{Get rejection rates of the two main tests}
+\title{Get rejection rates of the p value and fragility index based test}
 \usage{
 get.rejection.rates(
   get.p.val,
-  get.replacements = NULL,
   get.sample.null = NULL,
   get.sample.alt = NULL,
   phi,
@@ -18,27 +17,33 @@ get.rejection.rates(
 )
 }
 \arguments{
-\item{get.p.val}{a}
+\item{get.p.val}{a function which inputs a contingency table and outputs a p value}
 
-\item{get.replacements}{a}
+\item{get.sample.null}{a function which inputs a sample size and outputs a sample under the null hypothesis.
+By default NULL, which indicates to skip calculations under the null hypothesis}
 
-\item{get.sample.null}{a set to NULL to skip null calculations}
+\item{get.sample.alt}{a function which inputs a sample size and outputs a sample under the alternative hypothesis.
+By default NULL, which indicates to skip calculations under the alternative hypothesis}
 
-\item{get.sample.alt}{a set to NULL to skip alternative calculations}
+\item{phi}{a numeric for the fragility index quantile}
 
-\item{phi}{a}
+\item{n}{a numeric for the sample size}
 
-\item{n}{a}
+\item{alpha}{a numeric for the significance cutoff}
 
-\item{alpha}{a}
+\item{algorithm}{a string indicating the algorithm to use to calculate the fragility index. By default 'greedy'.
+See bin.fi for more options.}
 
-\item{algorithm}{a}
+\item{cl}{a cluster from the \code{parallel} package, not currently supported}
+
+\item{nsim}{a numeric for the number of monte carlo simulations.}
 }
 \value{
 a length 4 vector with the size and power of both tests.
 }
 \description{
-Get rejection rates of the two main tests
+This function is used to calculate a monte carlo estimate of the size and power of the p value based and
+fragility index based statistical test.
 }
 \examples{
 get.p.val <- function(mat) {
@@ -61,5 +66,6 @@ get.p.val <- function(mat) {
 get.sample.null <- function(ss) draw.binom(ss, theta1 = .14, theta2 = .14, row.prop = 1 / 2, matrix = TRUE)
 get.sample.alt <- function(ss) draw.binom(ss, theta1 = .14, theta2 = .08, row.prop = 1 / 2, matrix = TRUE)
 
-get.rejection.rates(get.p.val, NULL, get.sample.null, get.sample.alt, 5, 100, algorithm = "walsh")
+get.rejection.rates(get.p.val, get.sample.null, get.sample.alt, phi=2, n=100, algorithm = "walsh")
+
 }

@@ -2,14 +2,28 @@
 % Please edit documentation in R/internal.R
 \name{get_beta_parameters}
 \alias{get_beta_parameters}
-\title{Gets parameters for sampling in ltfu_fi
-Chooses them so that the mode is po and the 75th
-quantile is mult*po}
+\title{Finds beta inverse dispersion parameter when given a center and a multiplier to determine the scale}
 \usage{
 get_beta_parameters(po, mult = 1.3)
 }
+\arguments{
+\item{po}{the location parameter of the beta distribution}
+
+\item{mult}{the multiplier which is used to determine the scale. The 75th
+quantile of the beta distribution will be mult*po.}
+}
+\value{
+a length one numeric with the beta inverse disperion parameter
+}
 \description{
-Gets parameters for sampling in ltfu_fi
+This is an internal function for use in the LTFU-aware
+fragility index calculation functions.
+}
+\details{
+Gets parameters for sampling in ltfu.fi
 Chooses them so that the mode is po and the 75th
 quantile is mult*po
+}
+\examples{
+params <- get_beta_parameters(.3)
 }

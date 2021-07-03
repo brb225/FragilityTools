@@ -2,67 +2,65 @@
 % Please edit documentation in R/front.R
 \name{bin.fi}
 \alias{bin.fi}
-\title{Calculate a fragility index for data with binary responses}
+\title{Calculates a fragility index for 2x2 data}
 \usage{
 bin.fi(
-  data.table = NULL,
+  crosstab = NULL,
   X = NULL,
   Y = NULL,
   alg = "greedy",
   test = "fisher",
-  fi.start = NULL,
   alpha = 0.05,
+  q = 0,
   verbose = FALSE,
-  warm.start = TRUE,
-  delta = NULL,
-  min.p = 0
+  fi.start = NULL,
+  delta = NULL
 )
 }
 \arguments{
-\item{data.table}{a 2x2 contingency table, stored as a matrix or table}
+\item{crosstab}{a 2x2 contingency table, stored as a matrix or table. Either input a data table or both X and Y.}
 
-\item{X}{a dataframe representing the covariates}
+\item{X}{a dataframe representing the covariates. Either input a data table or both X and Y.}
 
-\item{Y}{a dataframe representing the responses}
+\item{Y}{a dataframe representing the responses. Either input a data table or both X and Y.}
 
-\item{alg}{a string specifying the FI algorithm, 'greedy' (default), 'exact', 'original', or 'original.bothdir'}
+\item{alg}{a string specifying the FI algorithm, 'exact', 'original', 'original.bothdir', 'greedy', or 'hybrid'.
+The exact algorithm is described in the \link{Incidence fragility index} article. It will return the exact fragility
+index possibly at the cost of longer run time. The original algorithm runs the algorithm proposed by Walsh et al. (2014).
+The 'original.bothdir' algorithm runs a natural variant of the original algorithm which allows for searching in both directions
+of the chosen group. The greedy algorithm is described in \link{Generalized fragility index} and efficiently upper bounds the fragility index.
+The hybrid approach is described in \link{Generalized fragility index} and first runs the greedy algorithm and then finetunes the output
+similar to the exact algorithm.}
 
 \item{test}{a string specifying the test, defaulting to 'fisher' for the Fisher exact test.
-An alternative is 'fisher.midp' and 'pearson.chisq'.}
+Some alternatives are 'fisher.midp', 'pearson.chisq', 'ni.normal'.}
 
-\item{fi.start}{the starting fragility index considered in the exact algorithm.}
+\item{alpha}{a number for the size of test, default 0.05.}
 
-\item{alpha}{a number for the size of test}
+\item{q}{the minimum probability of allowable outcome modifications, defaults to 0 (allowing all modifications).
+Note that alg='original' or alg='original.bothdir' do not support this option.}
 
 \item{verbose}{a logical value for whether to print status updates while running}
 
-\item{warm.start}{If using the exact algorithm without specifying a \code{max.f} argument,
-a greedy algorithm will be ran first to upper bound the search for the exact algorithm.
-Set to FALSE to only run the exact algorithm.}
+\item{fi.start}{the starting fragility index considered in the exact algorithm.}
 
 \item{delta}{the noninferiority margin for when test='ni.normal'}
-
-\item{min.p}{the minimum probability of allowable outcome changes, defaults to 0 (allowing all changes).
-Note that alg='original' or alg='original.bothdir' does not support this option.}
 }
 \value{
-the fragility index and other values, depending on which algorithm is specified.
+a list containing the fragility index and other values, depending on which algorithm is specified.
+The name of the fragility index in the list is 'FI'
 }
 \description{
-Estimate a fragility index using for the fisher exact test using a table
-}
-\details{
-This is a function which is a wrapper around internal functions which calculate
-the fragility index for different data types and test specifications.
+This is a function which is a wrapper around several general purpose functions to calculate fragility
+indices. Several algorithms and several methodologies can be employed to find various fragility indices
+for 2x2 tables. The function supports allowing only sufficiently likely modifications, as described in
+the article \link{Incidence fragility index}.
 }
 \examples{
 x <- matrix(nrow = 2, byrow = TRUE, c(5, 100, 30, 70))
 colnames(x) <- c("event", "nonevent")
 rownames(x) <- c("treatment", "control")
-p.grid <- seq(0, 1, by = .01)
-fi.grid <- sapply(p.grid, function(p) bin.fi(data.table = x, alg = "greedy", min.p = p, verbose = FALSE)$FI)
-ggplot2::qplot(p.grid[fi.grid < Inf], fi.grid[fi.grid < Inf],
-  xlab = "Likelihood bound",
-  ylab = "Fragility index", xlim = c(0, 1), main = "Fisher exact test fragility indices (n=205)"
-)
+bin.fi(crosstab = x, alg = "greedy", q = .5, verbose = FALSE)$FI
+bin.fi(crosstab = x, alg = "exact", q = .01, verbose = FALSE)$FI
+
 }

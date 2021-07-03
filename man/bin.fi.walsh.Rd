@@ -2,21 +2,30 @@
 % Please edit documentation in R/internal.R
 \name{bin.fi.walsh}
 \alias{bin.fi.walsh}
-\title{Original FI, for binary data}
+\title{Original fragility index calculation, for binary data}
 \usage{
-bin.fi.walsh(mat, get.p, alpha = 0.05, dir = "both")
+bin.fi.walsh(crosstab, get.p, alpha = 0.05, dir = "both")
 }
 \arguments{
-\item{mat}{a 2x2 matrix with groups on the rows}
+\item{crosstab}{a 2x2 contingency table with groups on the rows}
 
 \item{get.p}{a function which accepts a 2x2 matrix and outputs a p value}
 
-\item{alpha}{the p-value cutoff to reject, 0.05 by default}
+\item{alpha}{a numeric for the significance cutoff, 0.05 by default}
 
 \item{dir}{a character, either "left", "right", or "both". The default is "both".}
 }
+\value{
+a list containing the signed fragility index and other accompanying values,
+similar to \code{greedy.fi}.
+}
 \description{
-Original FI, for binary data
+This function implements the original algorithm to calculate a fragility index,
+as it was proposed by Walsh et al. (2014). The algorithm determines a single group
+in which to make outcome modifications. We also implement a variant which considers
+outcome modifications in both directions (i.e. increasing and decreasing event counts),
+which is a hybrid of the algorithm due to Walsh et al. (2014) and the algorithm
+commonly used for the "reverse" fragility index.
 }
 \examples{
 bin.fi.walsh(matrix(c(100, 96, 13, 28), nrow = 2), function(mat) fisher.test(mat)$p.value)

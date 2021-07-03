@@ -2,50 +2,51 @@
 % Please edit documentation in R/front.R
 \name{bin.fi.incidence}
 \alias{bin.fi.incidence}
-\title{Loop over bin.fi for relevant grid of min.p values}
+\title{Calculate all of the incidence fragility indices}
 \usage{
 bin.fi.incidence(
-  data.table = NULL,
-  X = NULL,
-  Y = NULL,
+  crosstab = NULL,
   alg = "exact",
   test = "fisher",
   fi.start = NULL,
   alpha = 0.05,
   verbose = FALSE,
-  warm.start = TRUE,
-  delta = NULL
+  delta = NULL,
+  X = NULL,
+  Y = NULL
 )
 }
 \arguments{
-\item{data.table}{a 2x2 non negative integer matrix representing the output of a clinical trial.
+\item{crosstab}{a 2x2 non negative integer matrix (contingency table) representing the output of a clinical trial.
 The rows correspond to treatment/control and the columns to event/nonevent.}
 
-\item{X}{a data frame of covariates}
-
-\item{Y}{a data frame of responses}
-
-\item{alg}{a string specifying the FI algorithm, 'greedy' (default), 'exact', 'original', or 'original.bothdir'}
+\item{alg}{a string specifying the FI algorithm, 'exact', 'greedy', 'hybrid'.
+See the documentation of bin.fi for more information. Note that 'original' and 'original.bothdir'
+do not support the per-patient sufficiently likely threshold so cannot be used here.}
 
 \item{test}{a string specifying the test, defaulting to 'fisher' for the Fisher exact test.
-An alternative is 'fisher.midp' and 'pearson.chisq'.}
+Alternatives include 'fisher.midp' and 'pearson.chisq'.}
 
-\item{fi.start}{the starting fragility index considered in the exact algorithm.}
+\item{fi.start}{the starting fragility index considered in the exact algorithm}
 
-\item{alpha}{a number for the size of test}
+\item{alpha}{a numeric for the significance threshold of the statistical test}
 
 \item{verbose}{a logical value for whether to print status updates while running}
-
-\item{warm.start}{If using the exact algorithm without specifying a \code{max.f} argument,
-a greedy algorithm will be ran first to upper bound the search for the exact algorithm.
-Set to FALSE to only run the exact algorithm.}
-
-\item{delta}{the noninferiority margin for when test='ni.normal'}
 }
 \value{
-a matrix containing the p values at which there's a changepoint and the corresponding
-values of the incidence fragility index
+a matrix containing the sufficiently likely threshold values q at which there is
+a changepoint of the corresponding values of the incidence fragility index
 }
 \description{
-Loop over bin.fi for relevant grid of min.p values
+The function is used to calculate the incidence fragility indices for every possible sufficiently likely threshold.
+Note, the incidence fragility indices are formally defined in the article \link{Incidence fragility index}. The function bin.fi
+in this package will calculate an incidence fragility index for a given threshold, and this function loops over bin.fi
+for relevant grid of sufficiently likely thresholds min.p (i.e. q). The function \code{incidence.plot} allows for a convenient
+visualization of these values.
+}
+\examples{
+x <- matrix(nrow=2,byrow=TRUE,c(5, 100, 30, 70),
+dimnames = list(c('treatment', 'control'), c('event', 'nonevent')))
+out <- bin.fi.incidence(crosstab=x, alg='exact')
+
 }

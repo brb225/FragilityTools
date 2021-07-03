@@ -2,12 +2,12 @@
 % Please edit documentation in R/internal.R
 \name{bin.fi.exact}
 \alias{bin.fi.exact}
-\title{Calculate an exact fragility index for the fisher exact test}
+\title{Exactly calculate a fragility index for 2x2 data (deprecated)}
 \usage{
-bin.fi.exact(x, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE)
+bin.fi.exact(crosstab, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE)
 }
 \arguments{
-\item{x}{a 2x2 matrix with treatments on rows and outcomes on columns}
+\item{crosstab}{a 2x2 contingency table with treatments on rows and outcomes on columns}
 
 \item{get.p}{a function inputting a table and outputting a p-value}
 
@@ -19,14 +19,14 @@ bin.fi.exact(x, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE)
 percentages (in increments of roughly ten percent)}
 }
 \value{
-a fragility index
+a list containing the signed fragility index and other accompanying values,
+similar to \code{greedy.fi}.
 }
 \description{
-Exactly alcululate a fragility index using for the fisher exact test using a table.
-Do a grid search over all FI values <= some value.
-}
-\details{
-Do not call this function: use bin.fi with option 'exact' instead
+Exactly calculate a fragility index using a 2x2 table.
+Do a grid search over all FI values <= some value. This has
+been deprecated and will stop with an error to use
+bin.fi.exact2 instead, as it is more efficient.
 }
 \examples{
 x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))

@@ -1,4 +1,4 @@
-devtools::load_all()
+library(FragilityTools) #devtools::load_all()
 library(tidyverse)
 theme_set(theme_bw())
 
@@ -11,7 +11,7 @@ mat_walter
 
 out1 <- bin.fi.incidence(mat_walter)
 plt1 <- incidence.plot(out1)
-ggsave('tab1_fi_plot.eps', plt1, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
+#ggsave('tab1_fi_plot.eps', plt1, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 # 457 x 316
 
 # LIMIT-2 TRIAL
@@ -22,17 +22,17 @@ rownames(mat_limit) <- c('Magnesium', 'Placebo')
 colnames(mat_limit) <- c('death', 'survived')
 mat_limit
 
-out2 <- bin.fi.incidence(mat_limit)
-plt2 <- incidence.plot(out2)
+out_limit <- bin.fi.incidence(mat_limit)
+plt_limit <- incidence.plot(out_limit)
 
 # table 2
-# example 4c in the paper
+# example 4c in paper
 mat2 <- matrix(nrow=2, byrow=TRUE, c(2,1,1,2))#c(6,191,19,0))
 rownames(mat2) <- c('Group 1', 'Group 2')
 colnames(mat2) <- c('Event', 'Nonevent')
 
 out2 <- bin.fi.incidence(mat2)
-plt2 <- incidence.plot(out2)
+#plt2 <- incidence.plot(out2) # not meaningful since FI is always -Inf
 
 # table 3
 # example 4d in paper
@@ -42,7 +42,7 @@ colnames(mat3) <- c('Event', 'Nonevent')
 
 out3 <- bin.fi.incidence(mat3)
 plt3 <- incidence.plot(out3)
-ggsave('tab3_fi_plot.eps', plt3, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
+#ggsave('tab3_fi_plot.eps', plt3, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 
 # table 4
 # example 5a in paper
@@ -52,7 +52,7 @@ colnames(mat4) <- c('Event', 'Nonevent')
 
 out4 <- bin.fi.incidence(mat4)
 plt4 <- incidence.plot(out4)
-ggsave('tab4_fi_plot.eps', plt4, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
+#ggsave('tab4_fi_plot.eps', plt4, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 
 # table 6
 # example 5b in the paper
@@ -62,4 +62,4 @@ colnames(mat6) <- c('Event', 'Nonevent')
 
 out6 <- bin.fi.incidence(mat6)
 plt6 <- incidence.plot(out6)
-ggsave('tab6_fi_plot.eps', plt6, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
+#ggsave('tab6_fi_plot.eps', plt6, device='eps',  width = 75, height = 60, units = "mm", dpi=320)

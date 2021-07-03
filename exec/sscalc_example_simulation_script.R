@@ -3,9 +3,9 @@ set.seed(1234567890)
 # power = .8, alpha=.05
 print('get sample sizes for plot')
 tictoc::tic()
-out_pow.8_tau.5 <- min.fi.curve(phi.grid, min.power=.8, alpha=0.05, tau=.5,
+out_pow.8_tau.5 <- general.fi.sscurve(phi.grid, min.power=.8, alpha=0.05, tau=.5,
                                 get.p.val=get.p.val, get.replacements=get.replacements, get.sample=get.sample.alt,
-                                gamma=0.3, nsim=nsim_low, eps=eps, niters=150,
+                                gamma=0.3, nsim=nsim_low, eps=eps, niters=niters,
                                 verbose=FALSE, cl=cl, algorithm='walsh')
 tictoc::toc()
 
@@ -15,15 +15,15 @@ print(out_pow.8_tau.5)
 tictoc::tic()
 out_pow.9_tau.5 <- general.fi.samplesize(min.fi=NULL, min.power=.9, alpha=0.05, tau=.5,
                                          get.p.val=get.p.val, get.replacements=get.replacements, get.sample=get.sample.alt,
-                                         gamma=.3, nsim=nsim_low, eps=eps, niters=150,
+                                         gamma=.3, nsim=nsim_low, eps=eps, niters=niters,
                                          verbose=FALSE, cl=cl, algorithm='walsh')
 tictoc::toc()
 
 # power = .8, alpha=.01
 tictoc::tic()
-out_pow.8_tau.8 <- min.fi.curve(phi.grid, min.power=.8, alpha=0.05, tau=.2,
+out_pow.8_tau.8 <- general.fi.sscurve(phi.grid, min.power=.8, alpha=0.05, tau=.2,
                                 get.p.val=get.p.val, get.replacements=get.replacements, get.sample=get.sample.alt,
-                                gamma=.3, nsim=nsim_high, eps=eps, niters=150,
+                                gamma=.3, nsim=nsim_high, eps=eps, niters=niters,
                                 verbose=FALSE, cl=cl, algorithm='walsh')
 tictoc::toc()
 
@@ -31,7 +31,7 @@ tictoc::toc()
 tictoc::tic()
 out_pow.9_tau.8 <- general.fi.samplesize(min.fi=NULL, min.power=.9, alpha=0.05, tau=.2,
                                          get.p.val=get.p.val, get.replacements=get.replacements, get.sample=get.sample.alt,
-                                         gamma=.3, nsim=nsim_high, eps=eps, niters=150,
+                                         gamma=.3, nsim=nsim_high, eps=eps, niters=niters,
                                          verbose=FALSE, cl=cl, algorithm='walsh')
 tictoc::toc()
 
@@ -73,7 +73,7 @@ ggplot(out2, aes(x=min.fi, y=fi_ss, shape=tau))+
 
 #### get error rates of tests at both extremes ####
 print('get error rates for varying phi')
-get_rates <- function(phi, n) as.data.frame(t(get.rejection.rates(get.p.val=get.p.val, get.replacements=get.replacements,
+get_rates <- function(phi, n) as.data.frame(t(get.rejection.rates(get.p.val=get.p.val,
                                                                   get.sample.null=get.sample.null, get.sample.alt=get.sample.alt,
                                                                   phi=phi, n=n, alpha=0.05, cl=cl, algorithm='walsh', nsim=1*10^k)))
 tic()
@@ -100,7 +100,7 @@ print('getting n for varying tau')
 tau.ss <- sapply(tau.grid.long, function(tau)
                       general.fi.samplesize(min.fi=chosen.phi, min.power=chosen.pi, alpha=0.05, tau=tau,
                               get.p.val=get.p.val, get.replacements=get.replacements, get.sample=get.sample.alt,
-                              gamma=.3, nsim=nsim_high, eps=eps, niters=150,
+                              gamma=.3, nsim=nsim_high, eps=eps, niters=niters,
                               verbose=FALSE, cl=cl, algorithm='walsh'))
 tau.calc.df <- data.frame('tau'=tau.grid.long, t(tau.ss))
 
@@ -120,7 +120,7 @@ if (chosen.pi==.8) {
   inp <- pmax(out_pow.9_tau.5[1], out_pow.8_tau.5[,3])
 }
 
-trad.out <- sapply(inp, FUN=function(n) equivalent_usual_parameters(0.05, chosen.pi, my.delta,
+trad.out <- sapply(inp, FUN=function(n) get.traditional.ss.params(0.05, chosen.pi, my.delta,
                                                                n, get.sample.alt.f, get.p.val=get.p.val, nsim=1*10^k
                    )
 )

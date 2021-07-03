@@ -2,10 +2,10 @@
 % Please edit documentation in R/internal.R
 \name{bin.fi.exact2}
 \alias{bin.fi.exact2}
-\title{Calculate an exact fragility index for the fisher exact test (2.0)}
+\title{Exactly calculate a fragility index for 2x2 data (2.0)}
 \usage{
 bin.fi.exact2(
-  x,
+  crosstab,
   get.p,
   alpha = 0.05,
   fi.start = 1,
@@ -15,28 +15,32 @@ bin.fi.exact2(
 )
 }
 \arguments{
-\item{x}{a 2x2 matrix with treatments on rows and outcomes on columns}
+\item{crosstab}{a 2x2 contingency table with interventions on rows and outcomes on columns}
 
 \item{get.p}{a function inputting a table and outputting a p-value}
 
-\item{alpha}{a string whose value being "exact" leads to an exact calculation}
+\item{alpha}{a scalar numeric for the significance cutoff}
 
 \item{fi.start}{The starting fi considered, by default 1.}
 
-\item{can.vary}{a 2x2 boolean matrix for whether each entry can change.}
+\item{can.vary}{a 2x2 boolean matrix for whether each entry can decrease. See the
+\link{incidence fragility} article for explanation.}
 
 \item{start.reversed}{a boolean for whether the start.fi value already reverses
-statistical significance. Note, FALSE just means unknown.}
+statistical significance. Note, FALSE just means unknown. (note to self: i should
+update this to be true/false/na)}
 
-\item{start.p}{The p value of the table with reversed statistical singificance, paired with
+\item{start.p}{The p value of the table with reversed statistical significance, paired with
 the parameter start.reversed}
 }
 \value{
-a fragility index
+a list containing the signed fragility index and other accompanying values,
+similar to \code{greedy.fi}
 }
 \description{
-Exactly alcululate a fragility index using for the fisher exact test using a table.
-Start at a given FI value and radiate out from there.
+Do not call this function: use bin.fi with option 'exact' instead
+The algorithm starts at a given FI value and radiates outward from there.
+Note this can use an increasing or decreasing search, depending on the input.
 }
 \details{
 Do not call this function: use bin.fi with option 'exact' instead. If bin.fi.exact2 is

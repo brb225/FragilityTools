@@ -1,12 +1,11 @@
 Package: FragilityTools
-Title: Toolbox For Using The Fragility Index
-Version: 0.0.2
+Title: Toolbox For Patient Count Fragility Measures
+Version: 1.0.0
 Authors@R: c(
     person("Baer", "Benjamin", email = "brb225@cornell.edu", role = c("aut", "cre")),
     person("Wells", "Martin", email = "mtw1@cornell.edu", role = "aut"))
 Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+License: use_gpl3_license()
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
@@ -21,7 +20,10 @@ Imports:
     meta,
     BiasedUrn,
     ggplot2,
-    latex2exp
+    latex2exp,
+    quantreg,
+    stat.extend,
+    mlbench
 Suggests: 
     knitr,
     rmarkdown,

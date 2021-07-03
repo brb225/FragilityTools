@@ -4,20 +4,24 @@
 \alias{incidence.plot}
 \title{Plot the output of bin.fi.incidence}
 \usage{
-incidence.plot(out)
+incidence.plot(out, ylab = latex2exp::TeX("Incidence fragility index $FI_q$"))
 }
 \arguments{
 \item{out}{the output of bin.fi.incidence}
+
+\item{ylab}{a string or LaTeX expression for the vertical axis label}
 }
 \value{
-a plot visualizing out
+a plot visualizing the incidence fragility indices
 }
 \description{
-Plot the output of bin.fi.incidence
+The plot follows the convention that the not filled-in circled points are not on the line
+and the points with a filled-in circle are on the line.
 }
 \examples{
 x <- matrix(nrow=2,byrow=TRUE,c(5, 100, 30, 70),
 dimnames = list(c('treatment', 'control'), c('event', 'nonevent')))
-out <- bin.fi.incidence(data.table=x, alg='exact')
+out <- bin.fi.incidence(crosstab=x, alg='exact')
 incidence.plot(out)
+
 }

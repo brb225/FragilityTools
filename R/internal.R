@@ -1,22 +1,27 @@
-#' Calculate an exact fragility index for the fisher exact test (2.0)
+#' Exactly calculate a fragility index for 2x2 data (2.0)
 #'
-#' Exactly alcululate a fragility index using for the fisher exact test using a table.
-#' Start at a given FI value and radiate out from there.
+#' Do not call this function: use bin.fi with option 'exact' instead
+#' The algorithm starts at a given FI value and radiates outward from there.
+#' Note this can use an increasing or decreasing search, depending on the input.
 #'
 #' Do not call this function: use bin.fi with option 'exact' instead. If bin.fi.exact2 is
 #' initialized with too large of a value, the algorithm could malfunction. It's best to
 #' leave the default behavior unless sure.
 #'
-#' @param x a 2x2 matrix with treatments on rows and outcomes on columns
-#' @param alpha a string whose value being "exact" leads to an exact calculation
+#' @param crosstab a 2x2 contingency table with interventions on rows and outcomes on columns
 #' @param get.p a function inputting a table and outputting a p-value
+#' @param alpha a scalar numeric for the significance cutoff
 #' @param fi.start The starting fi considered, by default 1.
-#' @param can.vary a 2x2 boolean matrix for whether each entry can change.
+#' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
+#' [incidence fragility] article for explanation.
 #' @param start.reversed a boolean for whether the start.fi value already reverses
-#' statistical significance. Note, FALSE just means unknown.
-#' @param start.p The p value of the table with reversed statistical singificance, paired with
+#' statistical significance. Note, FALSE just means unknown. (note to self: i should
+#' update this to be true/false/na)
+#' @param start.p The p value of the table with reversed statistical significance, paired with
 #' the parameter start.reversed
-#' @return a fragility index
+#'
+#' @return a list containing the signed fragility index and other accompanying values,
+#' similar to `greedy.fi`
 #'
 #' @examples
 #' x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))
@@ -24,14 +29,18 @@
 #' rownames(x) <- c("control", "treatment")
 #' get.p <- function(tab) fisher.test(tab)$p.value
 #' bin.fi.exact2(x, get.p)
-bin.fi.exact2 <- function(x, get.p, alpha = 0.05, fi.start = 1, can.vary = matrix(rep(TRUE, 4), nrow = 2),
+bin.fi.exact2 <- function(crosstab, get.p, alpha = 0.05, fi.start = 1, can.vary = matrix(rep(TRUE, 4), nrow = 2),
                           start.reversed=FALSE, start.p=NA) {
+  x <- crosstab # renamed
   fi.start <- abs(fi.start) # force fi.start to not be negative
 
   highest.f <- sum(apply(x, 1, max))
   fi.start <- min(fi.start, highest.f) # force fi.start to not exceed number of patients
 
-  if (is.null(rownames(x))) stop("Please include rownames on the data table")
+  if (is.null(rownames(x))) {
+    rownames(x) <- 1:2
+    #stop("Please include rownames on the data table")
+  }
   # get initial p value to check if frag.index = 0
   p0 <- get.p(x)
 
@@ -161,20 +170,23 @@ bin.fi.exact2 <- function(x, get.p, alpha = 0.05, fi.start = 1, can.vary = matri
   )
 }
 
-#' Calculate an exact fragility index for the fisher exact test
+
+#' Exactly calculate a fragility index for 2x2 data (deprecated)
 #'
-#' Exactly alcululate a fragility index using for the fisher exact test using a table.
-#' Do a grid search over all FI values <= some value.
+#' Exactly calculate a fragility index using a 2x2 table.
+#' Do a grid search over all FI values <= some value. This has
+#' been deprecated and will stop with an error to use
+#' bin.fi.exact2 instead, as it is more efficient.
 #'
-#' Do not call this function: use bin.fi with option 'exact' instead
-#'
-#' @param x a 2x2 matrix with treatments on rows and outcomes on columns
+#' @param crosstab a 2x2 contingency table with treatments on rows and outcomes on columns
 #' @param alpha a string whose value being "exact" leads to an exact calculation
 #' @param get.p a function inputting a table and outputting a p-value
 #' @param max.f the maximum fragility index considered
 #' @param verbose a boolean value for whether to print progress
 #' percentages (in increments of roughly ten percent)
-#' @return a fragility index
+#'
+#' @return a list containing the signed fragility index and other accompanying values,
+#' similar to `greedy.fi`.
 #'
 #' @examples
 #' x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))
@@ -182,9 +194,10 @@ bin.fi.exact2 <- function(x, get.p, alpha = 0.05, fi.start = 1, can.vary = matri
 #' rownames(x) <- c("control", "treatment")
 #' get.p <- function(tab) fisher.test(tab)$p.value
 #' bin.fi.exact(x, get.p)
-bin.fi.exact <- function(x, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE) {
-  stop("using bin.fi.exact2 instead") # added when depracating
+bin.fi.exact <- function(crosstab, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE) {
+  stop("Please use bin.fi.exact2 instead") # added when depracating
 
+  x <- crosstab # renamed
   if (is.null(rownames(x))) stop("Please include rownames on the data table")
   # get initial p value to check if frag.index = 0
   pp <- get.p(x)
@@ -262,16 +275,29 @@ bin.fi.exact <- function(x, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE) {
   ))
 }
 
-#' Original FI, for binary data
+
+#' Original fragility index calculation, for binary data
 #'
-#' @param mat a 2x2 matrix with groups on the rows
+#' This function implements the original algorithm to calculate a fragility index,
+#' as it was proposed by Walsh et al. (2014). The algorithm determines a single group
+#' in which to make outcome modifications. We also implement a variant which considers
+#' outcome modifications in both directions (i.e. increasing and decreasing event counts),
+#' which is a hybrid of the algorithm due to Walsh et al. (2014) and the algorithm
+#' commonly used for the "reverse" fragility index.
+#'
+#' @param crosstab a 2x2 contingency table with groups on the rows
 #' @param get.p a function which accepts a 2x2 matrix and outputs a p value
-#' @param alpha the p-value cutoff to reject, 0.05 by default
+#' @param alpha a numeric for the significance cutoff, 0.05 by default
 #' @param dir a character, either "left", "right", or "both". The default is "both".
+#'
+#' @return a list containing the signed fragility index and other accompanying values,
+#' similar to `greedy.fi`.
 #'
 #' @examples
 #' bin.fi.walsh(matrix(c(100, 96, 13, 28), nrow = 2), function(mat) fisher.test(mat)$p.value)
-bin.fi.walsh <- function(mat, get.p, alpha = 0.05, dir='both') {
+bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both') {
+  mat <- crosstab # renamed
+
   start.p <- get.p(mat)
   group.sizes <- apply(mat, 1, min) # smallest entry in each group
   smallest.grs <- unname(which(group.sizes == min(group.sizes)))[1]
@@ -337,6 +363,73 @@ bin.fi.walsh <- function(mat, get.p, alpha = 0.05, dir='both') {
   ))
 }
 
+
+#' Greedy calculation of fragility indices for 2x2 contingency tables
+#'
+#' Do not use this function. It is a variant of greedy.fi tailored for
+#' 2x2 contingency tables. It was written specifically to
+#' compare speed of certain algorithms for Baer et al. (2021)
+#' [A generalized development of fragility indices]. Later, it was
+#' encorporated for greedy calculation in bin.fi for speed.
+#'
+#' @param crosstab a 2x2 contingency table with interventions on rows and outcomes on columns
+#' @param get.p a function inputting a table and outputting a p-value
+#' @param alpha a scalar numeric for the significance cutoff, by default 0.05
+#' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
+#' [incidence fragility] article for explanation.
+#'
+#' @return a list containing the signed fragility index, in addition to the modified contingency
+#' table which has reversed statistical significance and the p value sequence (as in `greedy.fi`)
+#'
+#' @examples
+#' x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))
+#' colnames(x) <- c("event", "nonevent")
+#' rownames(x) <- c("control", "treatment")
+#' get.p <- function(tab) fisher.test(tab)$p.value
+#' bin.fi.greedy(x, get.p)
+bin.fi.greedy <- function(crosstab, get.p, alpha=.05, can.vary = matrix(rep(TRUE, 4), nrow = 2)) {
+  x <- crosstab # renamed
+
+  init.p <- get.p(x)
+  signFI <- (-1)^(init.p>=alpha)
+  FIcount <- 0
+
+  p_value_sequence <- init.p
+
+  mats <- list(outer(c(1,0),c(-1,1)),
+               outer(c(0,1),c(-1,1)),
+               outer(c(1,0),-c(-1,1)),
+               outer(c(0,1),-c(-1,1)))
+  mats <- mats[c(can.vary)] # order of mats picked so this works
+
+  get.p.mod <- function(mod) {
+    mat <- x+mod
+    if (any(mat<0)) return(NA)
+    return(get.p(mat))
+  }
+
+  while (TRUE) {
+    FIcount <- FIcount+1
+
+    out <- plyr::laply(mats, get.p.mod)
+    if (all(is.na(out))) {
+      FIcount <- Inf
+      break
+    }
+    if (init.p < alpha) {
+      ind <- which.max(out)
+    } else {
+      ind <- which.min(out)
+    }
+    x <- x + mats[[ind]]
+
+    p_value_sequence <- c(p_value_sequence, get.p(x))
+    if ((init.p < alpha & get.p(x) >= alpha) | (init.p >= alpha & get.p(x) < alpha)) break
+  }
+  return(list(FI=FIcount*signFI, mat=x, p_value_sequence = p_value_sequence))
+}
+
+
 #' Find when an increasing function observed with noise crosses x-axis
 #'
 #' Find the smallest positive integer x-value larger than in initial
@@ -357,6 +450,7 @@ bin.fi.walsh <- function(mat, get.p, alpha = 0.05, dir='both') {
 #' @param limits a length two numeric vector with the first entry being the lower bound and the
 #' second being an upper bound.
 #' @param gamma the power of n^{-1} in gradient descent
+#'
 #' @return the argument of f which satisfies the desired conditions.
 #'
 #' @examples
@@ -466,9 +560,15 @@ find_zero <- function(f, x.init = 10L, fz.verbose = FALSE, D = 1, gamma = .6,
   return(list("x" = final_x, "history" = history))
 }
 
-#' Convert a 2x2 table to a X,Y data frames
+
+#' Convert a 2x2 table into X,Y data frame format
+#'
+#' This is a helper function since FragilityTools uses X,Y data frames by default,
+#' but uses 2x2 tables when possible for improved computational efficiency.
 #'
 #' @param mat 2x2 numeric matrix
+#' @param event.col either 1 or 2, specifying which column has events, by default 1
+#'
 #' @return list containing two one-column data frames X and Y
 #'
 #' @examples
@@ -479,6 +579,11 @@ mat_to_xy <- function(mat, event.col = 1) {
   r2 <- rownames(mat)[2]
   c1 <- colnames(mat)[event.col]
   c2 <- colnames(mat)[3 - event.col]
+
+  if (is.null(r1)) r1 <- 'group1'
+  if (is.null(r2)) r2 <- 'group2'
+  if (is.null(c1)) c1 <- 'event'
+  if (is.null(c2)) c2 <- 'nonevent'
 
   # get relevant info
   xx <- mat[1, event.col] # "treatment"
@@ -500,8 +605,8 @@ mat_to_xy <- function(mat, event.col = 1) {
   Y <- c(y11, y12, y21, y22)
 
   # make dataframe with factors
-  X <- data.frame(factor(X, levels = rownames(mat))) # c(0,1)))
-  Y <- data.frame(factor(Y, levels = colnames(mat))) # c(0,1)))
+  X <- data.frame(factor(X, levels = c(r1, r2))) # c(0,1)))
+  Y <- data.frame(factor(Y, levels = c(c1,c2))) # c(0,1)))
 
   rownames(X) <- 1:nrow(X)
   colnames(X) <- "X"
@@ -512,9 +617,24 @@ mat_to_xy <- function(mat, event.col = 1) {
   return(list("X" = X, "Y" = Y))
 }
 
-#' Gets parameters for sampling in ltfu_fi
+
+#' Finds beta inverse dispersion parameter when given a center and a multiplier to determine the scale
+#'
+#' This is an internal function for use in the LTFU-aware
+#' fragility index calculation functions.
+#'
+#' Gets parameters for sampling in ltfu.fi
 #' Chooses them so that the mode is po and the 75th
 #' quantile is mult*po
+#'
+#' @param po the location parameter of the beta distribution
+#' @param mult the multiplier which is used to determine the scale. The 75th
+#' quantile of the beta distribution will be mult*po.
+#'
+#' @return a length one numeric with the beta inverse disperion parameter
+#'
+#' @examples
+#' params <- get_beta_parameters(.3)
 get_beta_parameters <- function(po, mult=1.3) {
   alpha <- function(s) s*po+1
   beta <- function(s) s-s*po+1
@@ -522,4 +642,156 @@ get_beta_parameters <- function(po, mult=1.3) {
   get75q <- function(s) qbeta(.875, alpha(s), beta(s))
   shat <- uniroot(function(s) get75q(s)-mult*po, c(0,999999))$root
   return(shat)
+}
+
+
+#' Simulate right-censored survival responses in two groups
+#'
+#' @param n the number of observations
+#' @param num.times the number of time points at which events or right-censors can occur
+#' @param p1 the proportion of events in the first group, by default NULL which takes p1 to be random
+#' @param p2 the proportion of events in the second group, by default NULL which takes p1 to be random
+#'
+#' @return a dataframe with three columns: group, time, and status
+#'
+#' @examples
+#' dat <- get.survival.data(n = 100, num.times = 6)
+get.survival.data <- function(n, num.times, p1 = NULL, p2 = NULL) {
+  # roughly 50/50 in control and treatment
+  dat <- data.frame(person_id = 1:n, group = sample(c("control", "treatment"), n, TRUE), stringsAsFactors = FALSE)
+
+  # generate event times depending on group
+  all.times <- sort(sample(1:(5 * num.times), num.times)) # pick 10 possible event times times
+  # all.times <- all.times - min(all.times) #makes 0 the first time, for plotting purposes
+  if (is.null(p1) & is.null(p2)) {
+    p <- list("control" = runif(num.times, 0, min(1, 1 / (num.times / 4))), "treatment" = runif(num.times, 0, min(1, 1 / (num.times / 2))))
+  } else {
+    p <- list("control" = rep(p1, num.times), "treatment" = rep(p2, num.times))
+  }
+  event.time <- function(group) {
+    p <- p[[group]]
+
+    time.of.death <- Inf # for survival censoring at end of study
+    for (i in 1:num.times) {
+      if (runif(1) < p[i]) {
+        time.of.death <- all.times[i]
+        break
+      }
+    }
+
+    censored <- sample(c("yes", "no"), 1, TRUE, c(.1, .9))
+    if (time.of.death == Inf) {
+      time.of.death <- max(all.times) + 1 # edits to remove Inf
+      censored <- "yes"
+    }
+    list(censored, time.of.death)
+  }
+
+  info <- sapply(dat$group, event.time)
+  data.frame(
+    "group" = dat[, 2],
+    "time" = unlist(info[2, ]),
+    "status" = (unlist(info[1, ]) == "no") + 0,
+    stringsAsFactors = FALSE
+  )
+}
+
+
+#' Calculate level of smallest HDR which contains the modified observation
+#'
+#' Used for internal functions in the study of generalized fragility indices.
+#'
+#' @param y a numeric vector of outcomes
+#' @param y.mod a numeric vector of outcomes after the fragility index modification
+#'
+#' @return a scalar numeric: a ratio of the likilihoods in y and y.mod, estimated
+#' using the MLE with the data y
+#'
+#' @examples
+#' y <- rnorm(100, 0, 1)
+#' y.mod <- rnorm(100,.1, 1.1) # should be returned from an FI procedure
+#' normal.sl(y, y.mod)
+#'
+#' @export
+normal.sl <- function(y, y.mod) {
+  n <- length(y)
+  sdy <- sd(y)#*sqrt(n/(n-1))
+
+  logp_real <- sum(dnorm(y, mean(y), sdy, log=TRUE))
+  logp_mod <- sum(dnorm(y.mod, mean(y), sdy, log=TRUE))
+  return(exp(logp_real-logp_mod)) # this can return > 1 sometimes... should we only consider sufficient statistics?
+  #return(abs(exp(logp_real)-exp(logp_mod))) # this returns huge numbers
+
+
+  #
+  #   # get test statistics
+  #   T.mod <- (mean(y.mod)-mu0)/sd(y.mod)*sqrt(n)
+  #   T.real <- (mean(y)-mu0)/sd(y)*sqrt(n)
+  #
+  #   # pick out specific non central t distribution
+  #   df <- n-1
+  #   ncp <- sqrt(n)/sd(y)*(mean(y)-mu0)
+  #
+  #   # short circuit and return cdf difference
+  #   return(abs(pt(T.mod, df, ncp)-pt(T.real, df, ncp)))
+  #
+  #
+  #
+  #
+  #
+  #
+  #   nct.exp.val <- ncp*sqrt(df/2)*gamma((df-1)/2)/gamma(df/2)
+  #   lb <- nct.exp.val*sqrt(df/(df+5/2))
+  #   ub <- nct.exp.val*sqrt(df/(df+1)) # bound from wikipedia
+  #   T.high <- suppressWarnings( # find mode
+  #     optimize(function(x) dt(x, df, ncp, log=TRUE),
+  #              interval=c(-lb, ub),
+  #              maximum=TRUE)$maximum
+  #     )
+  #
+  #   # if T.mod has higher density (based on pre-hdi area)
+  #   if (dt(T.mod, df, ncp)>dt(T.real, df, ncp)) return(abs(pt(T.mod, df, ncp)-pt(T.real, df, ncp)))
+  #
+  #   # if greater than mode, search
+  #   if (T.mod > T.high) {
+  #     rt <- uniroot(function(TT) dt(TT, df, ncp)-dt(T.mod, df, ncp),
+  #                    lower=T.high-2*(T.mod-T.high),
+  #                    upper=T.high)$root
+  #   }
+  #   if (T.mod < T.high) {
+  #     rt <- uniroot(function(TT) dt(TT, df, ncp)-dt(T.mod, df, ncp),
+  #                    lower=T.high,
+  #                    upper=T.high+2*(T.high-T.mod))$root
+  #   }
+  #   return(abs(pt(rt, df, ncp)-pt(T.mod, df, ncp)))
+  #
+  #   stop('error!! got through all ifs without returning..')
+}
+
+
+#' Calculate level of smallest HDR which contains the modified observation
+#'
+#' Used for internal functions in the study of generalized fragility indices.
+#'
+#' @param y a numeric vector of outcomes
+#' @param y.mod a numeric vector of outcomes after the fragility index modification
+#' @param hatbeta a numeric vector of estimated coefficients
+#' @param Xregr a numeric matrix of covariates used to explain the outcomes
+#'
+#' @return a scalar numeric: a ratio of the conditional likilihoods in y and y.mod, estimated
+#' using the MLE with the data y
+#'
+#' @examples
+#' y <- rpois(100, 1)
+#' y.mod <- rpois(100, 1.2) # should be returned from an FI procedure
+#' poisson.regr.sl(y, y.mod, 0, matrix(rnorm(100), ncol=100))
+#'
+#' @export
+poisson.regr.sl <- function(y, ymod, hatbeta, Xregr) { # we have to do glm because knowing the median (i.e. qr) doesn't tell u about the whole distribution
+  eta.pois <- apply(t(hatbeta*t(cbind(1,Xregr))),1,sum)
+  empirical.mean <- poisson()$linkinv(eta.pois)
+
+  logp_real <- sum(dpois(y, empirical.mean, log=TRUE))
+  logp_mod <- sum(dpois(y.mod, empirical.mean, log=TRUE))
+  return(exp(logp_real-logp_mod))
 }
