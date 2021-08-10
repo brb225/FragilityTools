@@ -25,6 +25,5 @@ Used for internal functions in the study of generalized fragility indices.
 \examples{
 y <- rpois(100, 1)
 y.mod <- rpois(100, 1.2) # should be returned from an FI procedure
-poisson.regr.sl(y, y.mod, 0, matrix(rnorm(100), ncol=100))
-
+FragilityTools:::poisson.regr.sl(y, y.mod, 0, matrix(rnorm(100), ncol=100))
 }

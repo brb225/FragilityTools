@@ -55,6 +55,8 @@ chosen.phi <- 15
 chosen.tau <- .5
 chosen.pi <- .8
 
+plt_name <- 'FAME_REVISIONUPDATED.eps'
+
 #### run calculation script ####
 cl <- parallel::makeCluster(parallel::detectCores() - 1)
 parallel::clusterExport(cl, varlist = c(
@@ -69,3 +71,23 @@ parallel::stopCluster(cl)
 xtable(my_rates_phivary, digits = k - 1)
 xtable(my_rates_tauvary, digits = k - 1)
 xtable(trad.out, digits = k - 1)
+
+
+#### get secondary output to sentences in example ####
+# get slopes in Fig 1
+
+
+# get power of FI based test under p value only design
+cl <- parallel::makeCluster(parallel::detectCores() - 1)
+fame.scndry1 <- get.rejection.rates(get.p.val, NULL, get.sample.alt,
+                                    phi=15, n=851, alpha=.05, alg='walsh', nsim=1000000)
+parallel::stopCluster(cl)
+
+# get what equivalent p value test power would be
+cl <- parallel::makeCluster(parallel::detectCores() - 1)
+fame.scndry2 <- get.rejection.rates(get.p.val, get.sample.null, get.sample.alt,
+                                    phi=0, n=1235, alpha=0.00106, alg='walsh', nsim=100000)
+parallel::stopCluster(cl)
+
+# look at how much higher ss varphi=15 gives
+1235/851

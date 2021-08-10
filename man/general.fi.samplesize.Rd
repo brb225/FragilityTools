@@ -36,7 +36,13 @@ sample_size_init_power is taken to produce the desired power.}
 \item{sample_size_init_fi}{a sample size to initialize the algorithm
 (not necessary, defaults to the sample size for power) to find the sample size for fi}
 
-\item{get.p.val}{a function that inputs X and Y and returns a p value}
+\item{get.p.val}{a fucntion that inputs a matrix and returns a p value, otherwise a function
+that inputs X and Y and returns a p value when alg='greedy'.}
+
+\item{get.replacements}{a function which outputs a data frame containing all possible row replacements
+for Y which are to be considered. The functions inputs the row of Y under consideration,
+the row of X under consideration, the row name, and the full original data frames X and Y.
+This gets used in the greedy algorithm.}
 
 \item{get.sample}{a function which inputs a sample size and outputs a sample, with
 the covariates in a dataframe X and the response in a dataframe Y}
@@ -63,7 +69,7 @@ and expected fragility index quantile}
 output but the longer the function will take to run.}
 
 \item{algorithm}{A string specifying the algorithm to use to calculate fragility indices.
-The default is "greedy". Alternatives include "walsh" for the algorithm originally used by Walsh et al. (2014).}
+The default is "walsh". Alternatives include "greedy" for using greedy.fi}
 }
 \value{
 the length two numeric vector of the calculated sample sizes for the desired power and fragility index
@@ -75,8 +81,14 @@ produces a power and fragility index larger than the input
 thresholds.
 }
 \examples{
-ss <- general.fi.sscurve(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
+ss <- general.fi.samplesize(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
 get.p.val = function(m)fisher.test(m)$p.value, get.sample = function(ss) draw.binom(ss, matrix=TRUE),
-nsim = 10, niters = 2, verbose = FALSE)
+nsim = 10, niters = 2, verbose = TRUE)
+
+ss <- general.fi.samplesize(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
+get.p.val = function(X,Y) fisher.test(table(X[,1], Y[,1]))$p.value,
+get.sample = function(ss) draw.binom(ss, matrix=FALSE),
+alg='greedy', niters=1, verbose = TRUE,
+get.replacements=function(y, x, rn, Y, X) data.frame(setdiff(c("event", "nonevent"), y)))
 
 }

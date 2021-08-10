@@ -21,6 +21,5 @@ Used for internal functions in the study of generalized fragility indices.
 \examples{
 y <- rnorm(100, 0, 1)
 y.mod <- rnorm(100,.1, 1.1) # should be returned from an FI procedure
-normal.sl(y, y.mod)
-
+FragilityTools:::normal.sl(y, y.mod)
 }

@@ -28,7 +28,7 @@
 #' colnames(x) <- c("event", "nonevent")
 #' rownames(x) <- c("control", "treatment")
 #' get.p <- function(tab) fisher.test(tab)$p.value
-#' bin.fi.exact2(x, get.p)
+#' FragilityTools:::bin.fi.exact2(x, get.p)
 bin.fi.exact2 <- function(crosstab, get.p, alpha = 0.05, fi.start = 1, can.vary = matrix(rep(TRUE, 4), nrow = 2),
                           start.reversed=FALSE, start.p=NA) {
   x <- crosstab # renamed
@@ -193,7 +193,7 @@ bin.fi.exact2 <- function(crosstab, get.p, alpha = 0.05, fi.start = 1, can.vary 
 #' colnames(x) <- c("event", "nonevent")
 #' rownames(x) <- c("control", "treatment")
 #' get.p <- function(tab) fisher.test(tab)$p.value
-#' bin.fi.exact(x, get.p)
+#' FragilityTools:::bin.fi.exact(x, get.p)
 bin.fi.exact <- function(crosstab, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE) {
   stop("Please use bin.fi.exact2 instead") # added when depracating
 
@@ -288,18 +288,28 @@ bin.fi.exact <- function(crosstab, get.p, alpha = 0.05, max.f = Inf, verbose = F
 #' @param crosstab a 2x2 contingency table with groups on the rows
 #' @param get.p a function which accepts a 2x2 matrix and outputs a p value
 #' @param alpha a numeric for the significance cutoff, 0.05 by default
-#' @param dir a character, either "left", "right", or "both". The default is "both".
+#' @param dir a character, either "left", "right", or "both". The default is "both". Walsh originally used
+#' 'left'.
+#' @param group a character specifying how to choose the single group in which to make modifications.
+#' The options are "event" for the fewest events (default), 'nonevent' for the fewest nonevents, or
+#' 'both' for the fewest overall. We assume that events are in the first column.
 #'
 #' @return a list containing the signed fragility index and other accompanying values,
 #' similar to `greedy.fi`.
 #'
 #' @examples
-#' bin.fi.walsh(matrix(c(100, 96, 13, 28), nrow = 2), function(mat) fisher.test(mat)$p.value)
-bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both') {
+#' FragilityTools:::bin.fi.walsh(matrix(c(100, 96, 13, 28), nrow = 2), function(mat) fisher.test(mat)$p.value)
+bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both', group='both') {
   mat <- crosstab # renamed
 
   start.p <- get.p(mat)
-  group.sizes <- apply(mat, 1, min) # smallest entry in each group
+  if (group=='event') {
+    group.sizes <- mat[,1] # event counts in each group
+  } else if (group=='nonevent') {
+    group.sizes <- mat[,2] # nonevent counts in each group
+  } else if (group=='both') {
+    group.sizes <- apply(mat, 1, min) # smallest entry in each group
+  }
   smallest.grs <- unname(which(group.sizes == min(group.sizes)))[1]
 
   get.mod.p <- function(f, smallest.gr) {
@@ -386,7 +396,7 @@ bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both') {
 #' colnames(x) <- c("event", "nonevent")
 #' rownames(x) <- c("control", "treatment")
 #' get.p <- function(tab) fisher.test(tab)$p.value
-#' bin.fi.greedy(x, get.p)
+#' FragilityTools:::bin.fi.greedy(x, get.p)
 bin.fi.greedy <- function(crosstab, get.p, alpha=.05, can.vary = matrix(rep(TRUE, 4), nrow = 2)) {
   x <- crosstab # renamed
 
@@ -454,7 +464,7 @@ bin.fi.greedy <- function(crosstab, get.p, alpha=.05, can.vary = matrix(rep(TRUE
 #' @return the argument of f which satisfies the desired conditions.
 #'
 #' @examples
-#' find_zero(function(x) x - 100 + rnorm(1), fz.verbose = FALSE)
+#' FragilityTools:::find_zero(function(x) x - 100 + rnorm(1), fz.verbose = FALSE)
 find_zero <- function(f, x.init = 10L, fz.verbose = FALSE, D = 1, gamma = .6,
                       burnin_dur = 16, eps = .1, proj = function(a) a, limits = c(1, 9999999)) {
   # updates proj to take into account the upper and lower limits
@@ -572,7 +582,7 @@ find_zero <- function(f, x.init = 10L, fz.verbose = FALSE, D = 1, gamma = .6,
 #' @return list containing two one-column data frames X and Y
 #'
 #' @examples
-#' mat_to_xy(matrix(1:4, nrow = 2))
+#' FragilityTools:::mat_to_xy(matrix(1:4, nrow = 2))
 mat_to_xy <- function(mat, event.col = 1) {
   # get names
   r1 <- rownames(mat)[1]
@@ -634,7 +644,7 @@ mat_to_xy <- function(mat, event.col = 1) {
 #' @return a length one numeric with the beta inverse disperion parameter
 #'
 #' @examples
-#' params <- get_beta_parameters(.3)
+#' params <- FragilityTools:::get_beta_parameters(.3)
 get_beta_parameters <- function(po, mult=1.3) {
   alpha <- function(s) s*po+1
   beta <- function(s) s-s*po+1
@@ -655,7 +665,7 @@ get_beta_parameters <- function(po, mult=1.3) {
 #' @return a dataframe with three columns: group, time, and status
 #'
 #' @examples
-#' dat <- get.survival.data(n = 100, num.times = 6)
+#' dat <- FragilityTools:::get.survival.data(n = 100, num.times = 6)
 get.survival.data <- function(n, num.times, p1 = NULL, p2 = NULL) {
   # roughly 50/50 in control and treatment
   dat <- data.frame(person_id = 1:n, group = sample(c("control", "treatment"), n, TRUE), stringsAsFactors = FALSE)
@@ -710,9 +720,7 @@ get.survival.data <- function(n, num.times, p1 = NULL, p2 = NULL) {
 #' @examples
 #' y <- rnorm(100, 0, 1)
 #' y.mod <- rnorm(100,.1, 1.1) # should be returned from an FI procedure
-#' normal.sl(y, y.mod)
-#'
-#' @export
+#' FragilityTools:::normal.sl(y, y.mod)
 normal.sl <- function(y, y.mod) {
   n <- length(y)
   sdy <- sd(y)#*sqrt(n/(n-1))
@@ -784,9 +792,7 @@ normal.sl <- function(y, y.mod) {
 #' @examples
 #' y <- rpois(100, 1)
 #' y.mod <- rpois(100, 1.2) # should be returned from an FI procedure
-#' poisson.regr.sl(y, y.mod, 0, matrix(rnorm(100), ncol=100))
-#'
-#' @export
+#' FragilityTools:::poisson.regr.sl(y, y.mod, 0, matrix(rnorm(100), ncol=100))
 poisson.regr.sl <- function(y, ymod, hatbeta, Xregr) { # we have to do glm because knowing the median (i.e. qr) doesn't tell u about the whole distribution
   eta.pois <- apply(t(hatbeta*t(cbind(1,Xregr))),1,sum)
   empirical.mean <- poisson()$linkinv(eta.pois)

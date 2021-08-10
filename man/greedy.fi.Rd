@@ -70,7 +70,7 @@ n <- 100
 X <- data.frame("tr_group" = sample(c("treated", "not treated"), n, TRUE))
 Y <- data.frame("outcome" = sample(c("sick", "healthy"), n, TRUE))
 get.p.val <- function(X, Y) fisher.test(table(X[[1]], Y[[1]]))$p.value
-get.replacements <- function(y, x, rn, Y, X) data.frame(setdiff(unique(Y[[1]]), y))
+get.replacements <- function(y, x, rn, Y, X) data.frame(Y=setdiff(unique(Y[[1]]), y))
 greedy.fi(X, Y, get.p.val = get.p.val, get.replacements = get.replacements)$FI
 
 }

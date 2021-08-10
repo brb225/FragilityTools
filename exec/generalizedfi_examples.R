@@ -338,11 +338,12 @@ t3.plots <- ggplot(dat.t3, aes(x=xx, fill=yy)) +
   theme_bw() +
   scale_fill_brewer(palette = "Dark2", name='Likelihood threshold q') + #scale_fill_manual(values=c('blue', 'red', 'green'))
   labs(x=latex2exp::TeX("Generalized fragility index $GFI_q$"), y='Count') +
-  theme(legend.position=c(.65,.75))
+  theme(legend.position=c(.71,.75))
 t3.plots
-ggsave('gfi_t_samplingdistn.eps', t3.plots, device=cairo_ps, fallback_resolution = 300, width = 35, height = 32, units = "mm", dpi=300, scale=2.5) #width=75
+ggsave('gfi_t_samplingdistn.eps', t3.plots, device=cairo_ps, fallback_resolution = 300,
+       width = 35, height = 32, units = "mm", dpi=300, scale=2.5) #width=75
 
-apply(gfi_t3, 2, min)
+apply(gfi_t3, 2, summary)
 
 
 
@@ -364,7 +365,8 @@ cl <- parallel::makeCluster(7)
 FIrun.out.age <- vector(mode='list', length=10)
 time.out.age <- rep(NA, 10)
 counter.age <- 0
-for (q.maxl in seq(.01, .99, length.out=10)) {
+for (q.maxl in seq(.01, .99, length.out=10)[-c(1:3)]) { # removing the first 3 because they're infinite (faster)
+  print(q.maxl)
   counter.age <- counter.age + 1; print(counter.age)
   time.out.age[counter.age] <- system.time({
     FIrun.out.age[[counter.age]] <- glm.gaussian.covariate.fi(cbind(x.age, z.age), y.age, q = q.maxl, cl=cl)
@@ -387,6 +389,12 @@ plt.age.lr <- ggplot(out.age.allinfo, aes(x=overall, y=FI), log10='x')+
 
 ggsave('age_q.eps', plt.age.q, device='eps', width = 35, height = 32, units = "mm", dpi=300, scale=2.5)
 ggsave('age_lr.eps', plt.age.lr, device='eps', width = 35, height = 32, units = "mm", dpi=300, scale=2.5)
+
+## imagine the age is \mu = 50 and \sigma = 10.. then how far do these values actually move?
+with(FIrun.out.age[[4]],
+     median(abs(new_responses$unique.c.y..out.optim.par.. - old_responses$X.regr...1.)))
+
+
 
 ## simulating from sampling distribution
 niteriter <- 100
@@ -413,7 +421,7 @@ for (iteriter in 1:niteriter) {
 }
 parallel::stopCluster(cl)
 
-# dat.t3 <- data.frame(xx = c(gfi_t3), yy = rep(as.factor(c(.05, .5, .95)) ,each = niteriter))
+# dat.t3 <- data.frame(xx = c(gfi_t3), yy = rep(as.factor(c(.05, .5, .95)), each = niteriter))
 # t3.plots <- ggplot(dat.t3, aes(x=xx, fill=yy)) +
 #   geom_histogram(alpha=.4, position="identity", bins=50) +
 #   theme_bw() +
@@ -472,10 +480,10 @@ only.consider = NULL; dont.consider = c()
 
 #devtools::load_all()
 system.time({
-  out.surv1 <- surv.fi(time, status, group, verbose=TRUE, q=0.0005)
+  out.surv1 <- surv.fi(time, status, group, verbose=TRUE, q=0.001) # -44
 })
 system.time({
-  out.surv2 <- surv.fi(time, status, group, verbose=TRUE, q=0.9)
+  out.surv2 <- surv.fi(time, status, group, verbose=TRUE, q=0.9)  # -3
 })
 
 

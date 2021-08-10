@@ -61,6 +61,8 @@ chosen.phi <- 25
 chosen.tau <- .5
 chosen.pi <- .9
 
+plt_name <- 'FAMOUS_REVISIONUPDATED.eps'
+
 #### run calculation script ####
 cl <- parallel::makeCluster(parallel::detectCores() - 1)
 parallel::clusterExport(cl, varlist = c(

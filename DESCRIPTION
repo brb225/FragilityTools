@@ -1,6 +1,6 @@
 Package: FragilityTools
 Title: Toolbox For Patient Count Fragility Measures
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: c(
     person("Baer", "Benjamin", email = "brb225@cornell.edu", role = c("aut", "cre")),
     person("Wells", "Martin", email = "mtw1@cornell.edu", role = "aut"))

@@ -19,5 +19,5 @@ This is a helper function since FragilityTools uses X,Y data frames by default,
 but uses 2x2 tables when possible for improved computational efficiency.
 }
 \examples{
-mat_to_xy(matrix(1:4, nrow = 2))
+FragilityTools:::mat_to_xy(matrix(1:4, nrow = 2))
 }

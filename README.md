@@ -3,15 +3,10 @@
 
 # FragilityTools
 
-<!-- badges: start -->
-
-<!-- badges: end -->
-
 The goal of FragilityTools is to provide a toolbox for researchers
 interested in the fragility index. The toolbox covers methodologies
 developed across four articles (Baer, Gaudino, Fremes, et al. 2021;
-Baer, Gaudino, Charlson, et al. 2021b, 2021a; Baer, Fremes, et al.
-2021).
+Baer, Gaudino, Charlson, et al. 2021; Baer, Fremes, et al. 2021).
 
 ## Installation
 
@@ -103,7 +98,7 @@ understand the statistical properties of the designed tests.
 ### The incidence fragility indices
 
 The incidence fragility index examples in Baer, Gaudino, Charlson, et
-al. (2021b) can be reproduced using the code in `FragilityTools/exec/`.
+al. (2021) can be reproduced using the code in `FragilityTools/exec/`.
 The file `/incidencefi_examples.R` is a script which provides all the
 output that appears in the article.
 
@@ -123,26 +118,6 @@ appears in the article.
 The function `ltfu.fi` calculates the LTFU-aware fragility indices and
 outputs a convenient visualization.
 
-### The generalized fragility indices
-
-The LTFU-aware fragility index examples in Baer, Gaudino, Charlson, et
-al. (2021a) can be reproduced using the code in `FragilityTools/exec/`.
-The file `/generalizedfi_examples.R` is a script which provides all the
-output that appears in the article.
-
-The function `greedy.fi` is the workhorse which is under the hood of
-each of the following functions. It efficiently approximates fragility
-indices with a greedy algorithm. The function `surv.fi` allows for
-calculating fragility indices with time-to-event outcomes. The function
-`ttest.fi` allows for calculating fragility indices corresponding to
-one-sample t tests. The function `binmeta.fi` allows for calculating
-fragility indices corresponding to meta analyses with 2 x 2 contingency
-tables. The function `glm.fi` returns the coefficient table from
-`stats::glm` augmented with fragility indices for each coefficient test.
-The function `glm.gaussian.covariate.fi` allows for calculating
-fragility indices when a gaussian distributed covariate is modified in a
-`glm` such a logistic regression.
-
 ## References
 
 <div id="refs" class="references">
@@ -155,18 +130,12 @@ to Follow Up.” *Under Revision at BMC Medical Research Methodology*.
 
 </div>
 
-<div id="ref-baer2021generalized">
-
-Baer, Benjamin R., Mario Gaudino, Mary Charlson, Stephen E. Fremes, and
-Martin T. Wells. 2021a. “A Generalized Development of the Fragility
-Index.” *To Be Submitted.*
-
-</div>
-
 <div id="ref-baer2021incidence">
 
-———. 2021b. “The Incidence Fragility Index: An Exact Fragility Index for
-Only Sufficiently Likely Modifications.” *Under Review at P.N.A.S.*
+Baer, Benjamin R., Mario Gaudino, Mary Charlson, Stephen E. Fremes, and
+Martin T. Wells. 2021. “The Incidence Fragility Index: An Exact
+Fragility Index for Only Sufficiently Likely Modifications.” *Under
+Revision at P.N.A.S.*
 
 </div>
 
@@ -174,7 +143,7 @@ Only Sufficiently Likely Modifications.” *Under Review at P.N.A.S.*
 
 Baer, Benjamin R., Mario Gaudino, Stephen E. Fremes, Mary Charlson, and
 Martin T. Wells. 2021. “Fragility Index Based Clinical Trial Design:
-Sample Size Calculations.” *Under Review at Journal of Clinical
+Sample Size Calculations.” *Under Revision at Journal of Clinical
 Epidemiology*.
 
 </div>

@@ -11,7 +11,7 @@ mult.grid <- c(1.1, 1.3, 1.5, 2)
 d.out <- c()
 s.out <- c()
 for (j in 1:length(mult.grid)) {
-  s <- get_beta_parameters(po, mult = mult.grid[j])
+  s <- FragilityTools:::get_beta_parameters(po, mult = mult.grid[j])
   s.out <- c(s.out, round(s, 1))
   d.out <- cbind(d.out, sapply(p.grid, function(p) dbeta(p, s*po+1, s*(1-po)+1)))
 }

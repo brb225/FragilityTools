@@ -26,9 +26,9 @@ draw.binom <- function(ss, theta1 = .3, theta2 = .7,
   xx <- rbinom(1, m, theta1)
   yy <- rbinom(1, n, theta2)
 
-  # get dfs if requested
+  # organize
   mat <- matrix(c(xx, yy, m - xx, n - yy), nrow = 2)
-  rownames(mat) <- 1:2
+  rownames(mat) <- c('group1', 'group2')
   colnames(mat) <- c('event', 'nonevent')
 
   if (matrix) {
@@ -230,6 +230,57 @@ bin.fi <- function(crosstab = NULL,
   return(out)
 }
 
+#' Sample size calculator for 2x2 tables, taking into account power and fragility index
+#'
+#' This function is a wrapper around general.fi.samplesize, see the documentation there.
+#'
+#' @param min.fi the smallest acceptable QUANTILE fragility index. When NULL, the FI calculation is skipped
+#' and sample_size_init_fi is taken to produce the desired FI.
+#' @param min.power the smallest acceptable power. When NULL, the power calculation is skipped and
+#' sample_size_init_power is taken to produce the desired power.
+#' @param alpha a numeric for the size of the p value based test
+#' @param tau the quantile of FI to bound, default 1/2
+#' @param algorithm A string specifying the algorithm to use to calculate fragility indices.
+#' The default is "walsh" (or 'original'). Alternatives include "greedy" for using greedy.fi
+#' @param test a string specifying which p value based test to use. By default 'fisher' for Fisher's exact test.
+#' Can also specify `chisq.prop` for Pearson's chi square test.
+#' @param theta1 a numeric for the event rate in the first group, for simulating the alternative model
+#' @param theta2 a numeric for the event rate in the second group, for simulating the alternative model
+#' @param row.prop a numeric for the proportion of patients in the first group, for simulating the alternative model
+#' @param niters the number of iterations to run the algorithm. The final output is the median across iterations.
+bin.fi.samplesize <- function(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
+                              test = 'fisher', algorithm='original', theta1=.3, theta2=.7, row.prop=1/2,
+                              niters=5, cl=NULL) {
+  if (test=='fisher') {
+    get.p.val <- function(m) fisher.test(m)$p.value
+  } else if (test == "chisq.prop") {
+    get.p.val <- function(tab) {
+      n1 <- sum(tab[1, ])
+      n2 <- sum(tab[2, ])
+      p1 <- tab[1, 1] / n1
+      p2 <- tab[2, 1] / n2
+
+      pbar <- (n1 * p1 + n2 * p2) / (n1 + n2)
+      ts <- (p1 - p2) / sqrt(pbar * (1 - pbar) * (1 / n1 + 1 / n2))
+      p_value <- 2 * pnorm(abs(ts), lower.tail = FALSE)
+      return(ifelse(is.nan(p_value), 1, p_value))
+    }
+  } else {
+    stop('Please choose an appropriate test option')
+  }
+
+  if (algorithm=='original') algorithm <- 'walsh'
+
+  if (algorithm=='walsh') {
+    get.sample <- function(ss) draw.binom(ss, theta1=theta1, theta2=theta2, row.prop = row.prop, matrix=TRUE)
+  } else if (algorithm=='greedy') {
+    get.sample <- function(ss) draw.binom(ss, theta1=theta1, theta2=theta2, row.prop = row.prop, matrix=FALSE)
+  }
+
+  general.fi.samplesize(min.fi = min.fi, min.power = min.power, alpha = alpha, tau=tau,
+                        get.p.val = get.p.val, get.sample = get.sample,
+                        algorithm=algorithm, niters=niters, cl=cl)
+}
 
 #' Sample size calculator, taking into account power and fragility index
 #'
@@ -246,7 +297,8 @@ bin.fi <- function(crosstab = NULL,
 #' (not necessary, defaults to 10) to find the sample size for power
 #' @param sample_size_init_fi a sample size to initialize the algorithm
 #' (not necessary, defaults to the sample size for power) to find the sample size for fi
-#' @param get.p.val a function that inputs X and Y and returns a p value
+#' @param get.p.val a fucntion that inputs a matrix and returns a p value, otherwise a function
+#' that inputs X and Y and returns a p value when alg='greedy'.
 #' @param get.sample a function which inputs a sample size and outputs a sample, with
 #' the covariates in a dataframe X and the response in a dataframe Y
 #' @param gamma the power of n^{-1} in the gradient descent in the Polyak-Ruppert averaging.
@@ -263,14 +315,24 @@ bin.fi <- function(crosstab = NULL,
 #' @param eps a parameter to control the error. The smaller is it, the more precise the
 #' output but the longer the function will take to run.
 #' @param algorithm A string specifying the algorithm to use to calculate fragility indices.
-#' The default is "greedy". Alternatives include "walsh" for the algorithm originally used by Walsh et al. (2014).
+#' The default is "walsh". Alternatives include "greedy" for using greedy.fi
+#' @param get.replacements a function which outputs a data frame containing all possible row replacements
+#' for Y which are to be considered. The functions inputs the row of Y under consideration,
+#' the row of X under consideration, the row name, and the full original data frames X and Y.
+#' This gets used in the greedy algorithm.
 #'
 #' @return the length two numeric vector of the calculated sample sizes for the desired power and fragility index
 #'
 #' @examples
-#' ss <- general.fi.sscurve(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
+#' ss <- general.fi.samplesize(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
 #' get.p.val = function(m)fisher.test(m)$p.value, get.sample = function(ss) draw.binom(ss, matrix=TRUE),
-#' nsim = 10, niters = 2, verbose = FALSE)
+#' nsim = 10, niters = 2, verbose = TRUE)
+#'
+#' ss <- general.fi.samplesize(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
+#' get.p.val = function(X,Y) fisher.test(table(X[,1], Y[,1]))$p.value,
+#' get.sample = function(ss) draw.binom(ss, matrix=FALSE),
+#' alg='greedy', niters=1, verbose = TRUE,
+#' get.replacements=function(y, x, rn, Y, X) data.frame(setdiff(c("event", "nonevent"), y)))
 #'
 #' @export
 general.fi.samplesize <- function(min.fi = 10, min.power = .8,
@@ -278,6 +340,9 @@ general.fi.samplesize <- function(min.fi = 10, min.power = .8,
                                   get.p.val, get.replacements, get.sample, gamma = 0.6, niters = 50,
                                   cl = NULL, verbose = FALSE, alpha = .05, tau = 1 / 2, nsim = 30,
                                   eps = .1, algorithm = "walsh") {
+
+  if (algorithm=='original') algorithm <- 'walsh'
+
   # helper function
   get_power_or_findex <- function(sample_size, getp = TRUE, getfi = FALSE, get.p.val, get.replacements, alpha, verbose, cl = NULL) { # pval and fi of simulated data
     # function which does simulation
@@ -311,7 +376,7 @@ general.fi.samplesize <- function(min.fi = 10, min.power = .8,
                                                   get.replacements = get.replacements, alpha = alpha, verbose = FALSE
           ))[[1]]
         } else if (algorithm == "walsh") {
-          fi_vals_i <- bin.fi.walsh(mat, get.p.val, alpha)$FI
+          fi_vals_i <- bin.fi.walsh(mat, get.p.val, alpha, dir='left', group='event')$FI
         } else {
           stop("Please input an appropriate algorithm choice.")
         } # end algorithm conditional
@@ -382,7 +447,8 @@ general.fi.samplesize <- function(min.fi = 10, min.power = .8,
       ss.s <- parallel::parSapply(X = 1:niters, FUN = get_power_zero, cl = cl)
     }
 
-    sample_size1 <- ceiling(quantile(ss.s, .5, names = FALSE)) # the points of the niters is to loop over the whole thing to stabilize.. document this better
+    #print(ggplot2::qplot(ss.s))
+    sample_size1 <- ceiling(quantile(ss.s, .5, names = FALSE)) # the points of the niters is to loop over the whole thing to stabilize..
   } else {
     if (verbose) print("skipped power calculation")
     sample_size1 <- sample_size_init_power
@@ -404,6 +470,7 @@ general.fi.samplesize <- function(min.fi = 10, min.power = .8,
       ss.s <- parallel::parSapply(X = 1:niters, FUN = get_fi_zero, cl = cl)
     }
 
+    #print(ggplot2::qplot(ss.s))
     sample_size2 <- ceiling(quantile(ss.s, .5, names = FALSE))
   } else {
     if (verbose) print("skipped fi calculations")
@@ -411,7 +478,7 @@ general.fi.samplesize <- function(min.fi = 10, min.power = .8,
   }
 
   # take largest sample size
-  sample_size <- c("power_ss" = sample_size1, "fi_ss" = sample_size2)
+  sample_size <- c("p_ss" = sample_size1, "fi_ss" = sample_size2)
   return(sample_size)
 }
 
@@ -475,7 +542,7 @@ general.fi.sscurve <- function(min.fi, get.p.val, get.replacements, get.sample, 
       nsim = nsim, eps = eps, algorithm = algorithm, tau = tau, gamma = gamma, niters = niters
     )
 
-    last_sample_size_power <- unname(sample_size["power_ss"])
+    last_sample_size_power <- unname(sample_size["p_ss"])
     last_sample_size_fi <- unname(sample_size["fi_ss"])
     min.power <- NULL
 
@@ -850,6 +917,11 @@ incidence.plot <- function(out, ylab=latex2exp::TeX("Incidence fragility index $
 #' manually tuned.
 #' @param gradientn.scale A number, by default 0.99. It determines where the tick marks will be for the posterior
 #' probability scale. It may need to be manually tuned.
+#' @param effect.size.plt A numeric, by default FALSE. It determines whether the plot will color tiles by the effect size
+#' (when TRUE) or by statistical significance (when FALSE) of the augmented data including both the observed and missing
+#' patients. Assumes events are in the first column.
+#' @param extreme a numeric, either 0, 1, or 2. 1 leads to a standard prior specification. 0 shrinks towards 0, 2 shrinks
+#' towards 1/2. Experimental--please do not change.
 #'
 #' @return Returns a list with two entries. The first `FI`, shows the LTFU-aware fragility index
 #' for each supplied entry of q, The last row shows the largest possible q and the corresponding
@@ -866,7 +938,7 @@ ltfu.fi <- function(crosstab, ltfu, get.p,
                     q=0, alpha=.05,
                     sampling.control=NULL,
                     xlab='Control group LTFU event rate', ylab='Treatment group LTFU event rate',
-                    fig.size=1.1, gradientn.scale=.99) {
+                    fig.size=1.1, gradientn.scale=.99, effect.size.plt = FALSE, extreme=1) {
   mat <- crosstab # renamed
 
   ltfu.grid <- as.matrix(expand.grid(g1=0:ltfu[1], g2=0:ltfu[2]))
@@ -895,7 +967,16 @@ ltfu.fi <- function(crosstab, ltfu, get.p,
 
       po <- rbeta(ndraws, Xo+0.5, no-Xo+0.5)
       s <- get_beta_parameters(Xo/no, mult)
-      pl <- rbeta(ndraws, s*po+1, s*(1-po)+1)
+      print(paste0('Group ',j,': s=',s))
+      if (extreme==1) {
+        pl <- rbeta(ndraws, s*po+1, s*(1-po)+1)
+      } else if (extreme==0) {
+        pl <- rbeta(ndraws, s*po/2+1, s*(1-po/2)+1)
+      } else if (extreme==2) {
+        pl <- rbeta(ndraws, s*(po/2+1/4)+1, s*(1-(po/2+1/4))+1)
+      } else {
+        stop("You set a wrong value of 'extreme', but you weren't supposed to edit the value in the first place!")
+      }
       Xl <- rbinom(ndraws, ltfu[j], pl)
       return(Xl)#/ltfu[j])
     }
@@ -916,6 +997,15 @@ ltfu.fi <- function(crosstab, ltfu, get.p,
   #ltfu.grid <- ltfu.grid[order(prs, decreasing=TRUE),]
   #prs <- prs[order(prs, decreasing=TRUE)]
 
+  aug_effect_size <- function(rr) {
+    g1 <- rr[1]; g2 <- rr[2];
+
+    return('es'=(crosstab[1,1]+g1)/(sum(crosstab[1,])+ltfu[1]) - (crosstab[2,1]+g2)/(sum(crosstab[2,])+ltfu[2]))
+  }
+  if (effect.size.plt) { # get augmented effect sizes
+    df <- cbind(df, 'es'=apply(df, 1, aug_effect_size))
+  }
+
   # get best guess (imputation)
   expected <- df[1,1:2]
   #the_best_guess <- wm_prs==(1:nrow(ltfu.grid))
@@ -933,26 +1023,44 @@ ltfu.fi <- function(crosstab, ltfu, get.p,
   maxpr <- signif(exp(max(df[,'log_prs']))*gradientn.scale, 2)
   plt.dat <- data.frame(df, mode=as.numeric(1==(1:nrow(df))))#data.frame(ltfu.grid, p=pvals, mode=the_best_guess, post_pr=prs)
   plt.dat$log_prs <- exp(plt.dat$log_prs)
-  plt.dat$sig <- as.factor(plt.dat$pval<alpha)
-  levels(plt.dat$sig) <- c(FALSE, TRUE)
-  plt <- ggplot(data=plt.dat[order(plt.dat$mode),],
-                aes(x=g1/ltfu[1], y=g2/ltfu[2], fill=sig)
-  )+
-    geom_tile(aes(color=log_prs), size=fig.size)+#, width=ww, height=hh), size=ss)+#width=.182, height=.182), size=1.5)+
-    scale_color_gradientn(name='Posterior \nprobability',
-                          colours=c("white","blue","black"),
-                          breaks=c(maxpr/2, maxpr))+#n.breaks=3)+
-    scale_fill_manual(values=c("#999999", "#E69F00"),
-                      name="Statistical \nsignificance",
-                      labels=c(paste0("p > ", plt.alpha), #>=
-                               paste0("p < ", plt.alpha)
-                      ),
-                      drop=FALSE)+
-    labs(x=xlab, y=ylab)+
-    theme_bw()+
-    scale_x_continuous(expand = c(0, 0)) +
-    scale_y_continuous(expand = c(0, 0)) +
-    theme(legend.position='bottom')
+
+  if (effect.size.plt) {
+    plt.dat$es <- as.numeric(plt.dat$es)
+    plt <- ggplot(data=plt.dat[order(plt.dat$mode),],
+                  aes(x=g1/ltfu[1], y=g2/ltfu[2], fill=es))+
+      geom_tile(aes(color=log_prs), size=fig.size)+
+      scale_color_gradientn(name='Posterior \nprobability',
+                            colours=c("white","blue","black"),
+                            breaks=c(maxpr/2, maxpr))+#n.breaks=3)+
+      scale_fill_continuous(name='Effect size', breaks=trunc(c(min(plt.dat$es), max(plt.dat$es))*1000)/1000,
+                            low = "grey5", high = "orange")+
+      labs(x=xlab, y=ylab)+
+      theme_bw()+
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme(legend.position='bottom')
+  } else {
+    plt.dat$sig <- as.factor(plt.dat$pval<alpha)
+    levels(plt.dat$sig) <- c(FALSE, TRUE)
+    plt <- ggplot(data=plt.dat[order(plt.dat$mode),],
+                  aes(x=g1/ltfu[1], y=g2/ltfu[2], fill=sig)
+    )+
+      geom_tile(aes(color=log_prs), size=fig.size)+#, width=ww, height=hh), size=ss)+#width=.182, height=.182), size=1.5)+
+      scale_color_gradientn(name='Posterior \nprobability',
+                            colours=c("white","blue","black"),
+                            breaks=c(maxpr/2, maxpr))+#n.breaks=3)+
+      scale_fill_manual(values=c("#999999", "#E69F00"),
+                        name="Statistical \nsignificance",
+                        labels=c(paste0("p > ", plt.alpha), #>=
+                                 paste0("p < ", plt.alpha)
+                        ),
+                        drop=FALSE)+
+      labs(x=xlab, y=ylab)+
+      theme_bw()+
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme(legend.position='bottom')
+  }
 
   # posterior probability of being significant
   pp.sig <- unname(sum(exp(df[df[,'pval']<alpha,'log_prs'])))
@@ -1081,7 +1189,7 @@ ltfu.fi <- function(crosstab, ltfu, get.p,
 #' X <- data.frame("tr_group" = sample(c("treated", "not treated"), n, TRUE))
 #' Y <- data.frame("outcome" = sample(c("sick", "healthy"), n, TRUE))
 #' get.p.val <- function(X, Y) fisher.test(table(X[[1]], Y[[1]]))$p.value
-#' get.replacements <- function(y, x, rn, Y, X) data.frame(setdiff(unique(Y[[1]]), y))
+#' get.replacements <- function(y, x, rn, Y, X) data.frame(Y=setdiff(unique(Y[[1]]), y))
 #' greedy.fi(X, Y, get.p.val = get.p.val, get.replacements = get.replacements)$FI
 #'
 #' @export
@@ -1090,7 +1198,6 @@ greedy.fi <- function(X, Y,
                       verbose = FALSE, cl = NULL,
                       only.consider = NULL, dont.consider = c()) {
   # alpha=.05; verbose=TRUE; only.consider=c(); dont.consider=c();
-
   # get num_patients
   if(is.null(only.consider)) {
     num_patients <- nrow(Y) - length(dont.consider)
@@ -1124,6 +1231,7 @@ greedy.fi <- function(X, Y,
   old.resp.df <- YY[c(), ] # empty data frame with same column types as YY
   new.resp.df <- YY[c(), ]
   while (same.significance) {
+
     # get reduced data values to search through
     rows.to.take <- !duplicated(cbind(XX, YY))
     rows.to.take <- rows.to.take & !(rownames(XX) %in% dont.consider) & (rownames(XX) %in% only.consider)
@@ -1139,8 +1247,7 @@ greedy.fi <- function(X, Y,
     # get possible replacements list (same length as num of rows of reduced)
     repl <- vector("list", length = nrow(YY.red))
     names(repl) <- rownames(YY.red)
-    # print(length(repl)) ### ##### ##### #############
-    for (i in 1:length(repl)) {
+    for (i in 1:length(repl)) { # loop over each patient to be modified
       # # init
       # holder <- vector('list', length=ncol(YY.red)) # temporary storage
       # names(holder) <- colnames(YY.red)
@@ -1155,19 +1262,11 @@ greedy.fi <- function(X, Y,
       #
       # ## reorganize to a dataframe with # of columns = # of cols of YY, and number of rows = number of combinations
       # holder <- expand.grid(holder, stringsAsFactors=FALSE)
-      #
-      # print(holder)
-      # print(class(holder))
-      # break
       holder <- get.replacements(YY.red[i, ], XX.red[i, ], row.names(YY.red)[i], Y, X)
-
-      # print(i) ###########################################
-      # print(holder)
 
       ## make each row (ie each combination) a separate entry of a list
       repl[[i]] <- split(holder, seq(nrow(holder)))
-      # print(repl[[i]]) ####################################################################################
-      for (j in 1:length(repl[[i]])) { # fix the row names to the same as original
+      for (j in 1:length(repl[[i]])) { # fix the row names to be the same as original
         rownames(repl[[i]][[j]]) <- rownames(YY.red)[i]
       }
     } # end for loop over i(repl)
@@ -1304,12 +1403,14 @@ greedy.fi <- function(X, Y,
 #' @param group a factor with levels representing group membership
 #' @param test a string specifying the test type, default is 'logrank' but could also use
 #' 'rmst.diff' for a restricted mean survival test.
+#' @param q the maximum per-patient probability of permitted modifications
 #' @param cl a cluster from the `parallel` package, used to compute fragility index over
 #' each modified observation at each stage of the greedy algorithm
 #' @param alpha a number for the size of test
 #' @param tau an optional parameter for the rmst difference test, by default NULL
 #' @param verbose a logical value for whether to print status updates while running
-#' @param q the maximum per-patient probability of permitted modifications
+#' @param max.time a numeric for when the study ended and no more events can be observed, by
+#' default Inf
 #'
 #' @return the output of greedy.fi for the time to event test
 #'
@@ -1322,7 +1423,7 @@ greedy.fi <- function(X, Y,
 #' @export
 surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
                     cl = NULL, alpha = .05,
-                    tau = NULL, verbose = FALSE) {
+                    tau = NULL, verbose = FALSE, max.time=Inf) {
   max.likelihood <- q # renamed
   #if (is.null(max.time)) max.time <- max(time)
   #min.time <- min(time)
@@ -1359,46 +1460,53 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
   #   return(expand.grid(time.repl, status.repl))
   # }
 
-  # new new replacements after updating to new scheme involving median
-  # get event preds
+  # get event and censor models
   mod.event <- survreg(Surv(time, status) ~ group, dist = "weibull")
-  pred.event <- predict(mod.event, type = "quantile", p = 1 / 2)
-
-  # get censor preds
-  pred.censor <- tryCatch(
-    {
-      mod.censor <- survreg(Surv(time, 1 - status) ~ 1, dist = "weibull")
-      conv.censor <- TRUE
-      predict(mod.censor, type = "quantile", p = 1/2)
-    },
-    warning = function(w) { # find a better way to handle the warnings and errors...
-      stop('ahh weibull did not work')
-      conv.censor <- FALSE
-      rep(max(Y$time), nrow(Y))
-    },
-    error = function(e) {
-      stop('ahh weibull did not work')
-      conv.censor <- FALSE
-      rep(max(Y$time), nrow(Y))
-    }
-  )
-
-  # ensure observed agrees with expected if observed
-  pred.event[Y$status == 1] <- Y$time[Y$status == 1]
-  pred.censor[Y$status == 0] <- Y$time[Y$status == 0]
-
-  # determine which patients need the below swap
-  needed.swap <- rep(FALSE, length(status))
-  needed.swap[Y$status == 1 & (pred.censor < pred.event)] <- TRUE
-  needed.swap[Y$status == 0 & (pred.event < pred.censor)] <- TRUE
-
-  # ensure that observed outcomes are not before predicted outcomes
-  pred.censor[Y$status == 1] <- pmax(pred.event[Y$status == 1], pred.censor[Y$status == 1])
-  pred.event[Y$status == 0] <- pmax(pred.event[Y$status == 0], pred.censor[Y$status == 0])
+  mod.censor <- survreg(Surv(time, 1 - status) ~ 1, dist = "weibull")
 
   # some helper functions
   survreg2weib_shape <- function(sr_scale) 1/sr_scale
   survreg2weib_scale <- function(sr_lp) exp(sr_lp) # from ?survreg.distributions
+
+  # get imputations
+  pred.censor <- rep(NA, nrow(Y))
+  pred.event <- rep(NA, nrow(Y))
+
+  pred.censor[status==0] <- time[status==0] # put in actual times
+  pred.event[status==1] <- time[status==1] # put in actual times
+
+  for (ii in 1:length(pred.event)) {
+    if (status[ii]==0) { # censor
+      Fec <- pweibull(pred.censor[ii],
+                      shape=survreg2weib_shape(mod.event$scale),
+                      scale=survreg2weib_scale(predict(mod.event, type='lp', newdata=X[ii,,drop=FALSE])))
+      pred.event[ii] <- predict(mod.censor, type = "quantile", p = (1+Fec)/2, newdata=X[ii,,drop=FALSE])
+    } else {
+      Fce <- pweibull(pred.event[ii],
+                      shape=survreg2weib_shape(mod.censor$scale),
+                      scale=survreg2weib_scale(predict(mod.censor, type='lp', newdata=X[ii,,drop=FALSE])))
+      pred.censor[ii] <- predict(mod.censor, type = "quantile", p = (1+Fce)/2, newdata=X[ii,,drop=FALSE])
+    }
+  }
+
+  # # get medians
+  # pred.event <- predict(mod.event, type = "quantile", p = 1 / 2)
+  # pred.censor <- predict(mod.censor, type = "quantile", p = 1/2)
+  #
+  # # ensure observed agrees with expected if observed
+  # pred.event[Y$status == 1] <- Y$time[Y$status == 1]
+  # pred.censor[Y$status == 0] <- Y$time[Y$status == 0]
+  #
+  # # determine which patients need the below swap
+  # needed.swap <- rep(FALSE, length(status))
+  # needed.swap[Y$status == 1 & (pred.censor < pred.event)] <- TRUE
+  # needed.swap[Y$status == 0 & (pred.event < pred.censor)] <- TRUE
+  #
+  # # ensure that observed outcomes are not before predicted outcomes
+  # pred.censor[Y$status == 1] <- pmax(pred.event[Y$status == 1], pred.censor[Y$status == 1])
+  # pred.event[Y$status == 0] <- pmax(pred.event[Y$status == 0], pred.censor[Y$status == 0])
+
+  # some helper functions
   weib_mode <- function(k, lam) {
     if (k <= 1) return(0)
     else return(lam*((k-1)/k)^(1/k))
@@ -1516,43 +1624,49 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
       }
     }
 
+    # enforce max.time
+    lower.lim.censor <- min(lower.lim.censor, max.time)
+    upper.lim.censor <- min(upper.lim.censor, max.time)
+    lower.lim.event <- min(lower.lim.event, max.time)
+    upper.lim.event <- min(lower.lim.event, max.time)
+
     # put together
-    if (!needed.swap[rownames(X)==rn]) { # if did not need to swap out a lower imputation
-      # highest and lowest of each component
-      if (upper.lim.censor <= upper.lim.event) {
-        Cmin <- lower.lim.censor
-        Cmax <- upper.lim.censor
-      } else if (lower.lim.censor < upper.lim.event & upper.lim.event < upper.lim.censor) {
-        Cmin <- lower.lim.censor
-        Cmax <- upper.lim.event
-      } else {
-        Cmin <- NA
-        Cmax <- NA
-      }
-      if (upper.lim.event <= upper.lim.censor) {
-        Emin <- lower.lim.event
-        Emax <- upper.lim.event
-      } else if (lower.lim.event < upper.lim.censor & upper.lim.censor < upper.lim.event) {
-        Emin <- lower.lim.event
-        Emax <- upper.lim.censor
-      } else {
-        Emin <- NA
-        Emax <- NA
-      }
-      mods.to.return <- matrix(c(Cmin, Cmax, Emin, Emax,
-                                 0, 0, 1, 1),
-                               ncol=2)
-      colnames(mods.to.return) <- c('time', 'status')
-      mods.to.return <- mods.to.return[!is.na(mods.to.return[,1]),]
-      mods.to.return <- as.data.frame(mods.to.return)
-      mods.to.return <- mods.to.return[!duplicated(mods.to.return),]
-    } else { # if this patient did, restrict to only modifying within their observed status
-      if (y[[2]]==1) { # event observed
-        mods.to.return <- data.frame('time'=c(lower.lim.event, upper.lim.event), 'status'=c(1,1))
-      } else { # censor observed
-        mods.to.return <- data.frame('time'=c(lower.lim.censor, upper.lim.censor), 'status'=c(0,0))
-      }
+    #if (!needed.swap[rownames(X)==rn]) { # if did not need to swap out a lower imputation
+    # highest and lowest of each component
+    if (upper.lim.censor <= upper.lim.event) {
+      Cmin <- lower.lim.censor
+      Cmax <- upper.lim.censor
+    } else if (lower.lim.censor < upper.lim.event & upper.lim.event < upper.lim.censor) {
+      Cmin <- lower.lim.censor
+      Cmax <- upper.lim.event
+    } else {
+      Cmin <- NA
+      Cmax <- NA
     }
+    if (upper.lim.event <= upper.lim.censor) {
+      Emin <- lower.lim.event
+      Emax <- upper.lim.event
+    } else if (lower.lim.event < upper.lim.censor & upper.lim.censor < upper.lim.event) {
+      Emin <- lower.lim.event
+      Emax <- upper.lim.censor
+    } else {
+      Emin <- NA
+      Emax <- NA
+    }
+    mods.to.return <- matrix(c(Cmin, Cmax, Emin, Emax,
+                               0, 0, 1, 1),
+                             ncol=2)
+    colnames(mods.to.return) <- c('time', 'status')
+    mods.to.return <- mods.to.return[!is.na(mods.to.return[,1]),]
+    mods.to.return <- as.data.frame(mods.to.return)
+    mods.to.return <- mods.to.return[!duplicated(mods.to.return),]
+    # } else { # if this patient did, restrict to only modifying within their observed status
+    #   if (y[[2]]==1) { # event observed
+    #     mods.to.return <- data.frame('time'=c(lower.lim.event, upper.lim.event), 'status'=c(1,1))
+    #   } else { # censor observed
+    #     mods.to.return <- data.frame('time'=c(lower.lim.censor, upper.lim.censor), 'status'=c(0,0))
+    #   }
+    # }
 
     # four corners
     # mods.to.return <- matrix(c(lower.lim.event, lower.lim.event, upper.lim.event, upper.lim.event,
@@ -1841,7 +1955,7 @@ ttest.fi <- function(y, q = 1, mu0 = 0, alpha = .05,
     get.replacements = get.replacements, get.p.val = get.p.val,
     alpha = alpha, verbose = verbose, cl=cl
   )
-  out$FI <- (-1)^(get.p.val(X,Y)>=alpha)*out$FI
+  #out$FI <- (-1)^(get.p.val(X,Y)>=alpha)*out$FI
   out[[length(out) + 1]] <- max.likelihood
   names(out)[length(out)] <- "max.likelihood"
 
@@ -2136,7 +2250,7 @@ glm.gaussian.covariate.fi <- function(X.regr, y.regr, fam=binomial(), cl=NULL,
     get.replacements = get.replacements, get.p.val = get.p.val,
     alpha = alpha, verbose = verbose, cl=cl
   )
-  out$FI <- (-1)^(get.p.val(X,Y)>=alpha)*out$FI
+  #out$FI <- (-1)^(get.p.val(X,Y)>=alpha)*out$FI
   out[[length(out) + 1]] <- max.likelihood
   names(out)[length(out)] <- "max.likelihood"
 

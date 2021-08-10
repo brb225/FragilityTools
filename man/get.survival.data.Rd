@@ -22,5 +22,5 @@ a dataframe with three columns: group, time, and status
 Simulate right-censored survival responses in two groups
 }
 \examples{
-dat <- get.survival.data(n = 100, num.times = 6)
+dat <- FragilityTools:::get.survival.data(n = 100, num.times = 6)
 }

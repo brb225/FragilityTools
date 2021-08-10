@@ -33,5 +33,5 @@ x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))
 colnames(x) <- c("event", "nonevent")
 rownames(x) <- c("control", "treatment")
 get.p <- function(tab) fisher.test(tab)$p.value
-bin.fi.exact(x, get.p)
+FragilityTools:::bin.fi.exact(x, get.p)
 }

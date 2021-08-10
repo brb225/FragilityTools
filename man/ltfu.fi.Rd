@@ -14,7 +14,9 @@ ltfu.fi(
   xlab = "Control group LTFU event rate",
   ylab = "Treatment group LTFU event rate",
   fig.size = 1.1,
-  gradientn.scale = 0.99
+  gradientn.scale = 0.99,
+  effect.size.plt = FALSE,
+  extreme = 1
 )
 }
 \arguments{
@@ -44,6 +46,13 @@ manually tuned.}
 
 \item{gradientn.scale}{A number, by default 0.99. It determines where the tick marks will be for the posterior
 probability scale. It may need to be manually tuned.}
+
+\item{effect.size.plt}{A numeric, by default FALSE. It determines whether the plot will color tiles by the effect size
+(when TRUE) or by statistical significance (when FALSE) of the augmented data including both the observed and missing
+patients. Assumes events are in the first column.}
+
+\item{extreme}{a numeric, either 0, 1, or 2. 1 leads to a standard prior specification. 0 shrinks towards 0, 2 shrinks
+towards 1/2. Experimental--please do not change.}
 }
 \value{
 Returns a list with two entries. The first \code{FI}, shows the LTFU-aware fragility index

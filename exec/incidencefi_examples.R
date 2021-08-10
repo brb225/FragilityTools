@@ -63,3 +63,15 @@ colnames(mat6) <- c('Event', 'Nonevent')
 out6 <- bin.fi.incidence(mat6)
 plt6 <- incidence.plot(out6)
 #ggsave('tab6_fi_plot.eps', plt6, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
+
+# table 7
+# "table 6" in the paper
+mat7 <- matrix(byrow=TRUE, nrow=2, c(23,87,44,46))
+rownames(mat6) <- c('Treatment A', 'Treatment B')
+colnames(mat6) <- c('Event', 'Nonevent')
+
+out7 <- bin.fi.incidence(mat7)
+plt7 <- incidence.plot(out7)
+ggsave('tab7_fi_plot.eps', plt7, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
+
+bin.fi(mat7, alg='original')$FI

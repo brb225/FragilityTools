@@ -13,7 +13,8 @@ surv.fi(
   cl = NULL,
   alpha = 0.05,
   tau = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  max.time = Inf
 )
 }
 \arguments{
@@ -36,6 +37,9 @@ each modified observation at each stage of the greedy algorithm}
 \item{tau}{an optional parameter for the rmst difference test, by default NULL}
 
 \item{verbose}{a logical value for whether to print status updates while running}
+
+\item{max.time}{a numeric for when the study ended and no more events can be observed, by
+default Inf}
 }
 \value{
 the output of greedy.fi for the time to event test

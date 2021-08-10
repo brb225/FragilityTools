@@ -25,5 +25,5 @@ Chooses them so that the mode is po and the 75th
 quantile is mult*po
 }
 \examples{
-params <- get_beta_parameters(.3)
+params <- FragilityTools:::get_beta_parameters(.3)
 }
