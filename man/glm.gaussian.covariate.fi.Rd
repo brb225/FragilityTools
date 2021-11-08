@@ -26,7 +26,7 @@ contain the covariate which is subject to modification.}
 
 \item{verbose}{a boolean indicating whether to print status updates while running, by default TRUE}
 
-\item{q}{a numeric for the minimum probability of outcome changes, by default .9}
+\item{q}{a numeric for the minimum probability of outcome changes, by default .7}
 
 \item{alpha}{a numberic for the significance threshold, by default 0.05}
 }
@@ -35,8 +35,8 @@ The output of greedy.fi (a list) with an additional element which has the
 per-patient modification likelihood bound, as in the article \link{Generalized fragility index}.
 }
 \description{
-This function returns a fragility index (and accomponying information) for an interesting fragility index
-which only modified a randomly observed covariate when testing the coefficient of another covariate such
+This function returns a fragility index (and accompanying information) for an interesting fragility index
+which only modifies a randomly observed covariate when testing the coefficient of another covariate such
 as an intervention. This is the only example in the package which modified a covariate instead of an
 outcome (or response). We assume that the distribution of the covariate is some Gaussian. We accomplish the
 fragility measure by putting the covariate in the \code{Y} argument of \code{greedy.fi} and the

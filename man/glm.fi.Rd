@@ -17,7 +17,8 @@ glm.fi(
 \arguments{
 \item{formula}{a formula, see the documention of 'glm' for more details}
 
-\item{family}{a description of the error distribution, see the documention of 'glm' for more details}
+\item{family}{a description of the error distribution, see the documention of 'glm' for more details.
+Currently only gaussian() and binomial() are supported.}
 
 \item{data}{a data frame with measurements on the columns and cases on the rows}
 

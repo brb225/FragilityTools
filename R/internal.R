@@ -15,10 +15,10 @@
 #' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
 #' [incidence fragility] article for explanation.
 #' @param start.reversed a boolean for whether the start.fi value already reverses
-#' statistical significance. Note, FALSE just means unknown. (note to self: i should
-#' update this to be true/false/na)
+#' statistical significance. Note, FALSE just means unknown. (note: in a future update, this
+#' will be true/false/na)
 #' @param start.p The p value of the table with reversed statistical significance, paired with
-#' the parameter start.reversed
+#' the parameter start.reversed. Defaults to NA when knowledge of reversal is not known
 #'
 #' @return a list containing the signed fragility index and other accompanying values,
 #' similar to `greedy.fi`
@@ -29,7 +29,8 @@
 #' rownames(x) <- c("control", "treatment")
 #' get.p <- function(tab) fisher.test(tab)$p.value
 #' FragilityTools:::bin.fi.exact2(x, get.p)
-bin.fi.exact2 <- function(crosstab, get.p, alpha = 0.05, fi.start = 1, can.vary = matrix(rep(TRUE, 4), nrow = 2),
+bin.fi.exact2 <- function(crosstab, get.p, alpha = 0.05, fi.start = 1,
+                          can.vary = matrix(rep(TRUE, 4), nrow = 2),
                           start.reversed=FALSE, start.p=NA) {
   x <- crosstab # renamed
   fi.start <- abs(fi.start) # force fi.start to not be negative
@@ -288,10 +289,10 @@ bin.fi.exact <- function(crosstab, get.p, alpha = 0.05, max.f = Inf, verbose = F
 #' @param crosstab a 2x2 contingency table with groups on the rows
 #' @param get.p a function which accepts a 2x2 matrix and outputs a p value
 #' @param alpha a numeric for the significance cutoff, 0.05 by default
-#' @param dir a character, either "left", "right", or "both". The default is "both". Walsh originally used
-#' 'left'.
+#' @param dir a character, either "left", "right", or "both". The default is "left". Walsh originally used
+#' 'left' which increases the outcome count in the left column (which is typically events)
 #' @param group a character specifying how to choose the single group in which to make modifications.
-#' The options are "event" for the fewest events (default), 'nonevent' for the fewest nonevents, or
+#' The options are: 'event' for the fewest events (default), 'nonevent' for the fewest nonevents, or
 #' 'both' for the fewest overall. We assume that events are in the first column.
 #'
 #' @return a list containing the signed fragility index and other accompanying values,
@@ -299,7 +300,7 @@ bin.fi.exact <- function(crosstab, get.p, alpha = 0.05, max.f = Inf, verbose = F
 #'
 #' @examples
 #' FragilityTools:::bin.fi.walsh(matrix(c(100, 96, 13, 28), nrow = 2), function(mat) fisher.test(mat)$p.value)
-bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both', group='both') {
+bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both', group='event') {
   mat <- crosstab # renamed
 
   start.p <- get.p(mat)
@@ -376,17 +377,13 @@ bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both', group='both'
 
 #' Greedy calculation of fragility indices for 2x2 contingency tables
 #'
-#' Do not use this function. It is a variant of greedy.fi tailored for
-#' 2x2 contingency tables. It was written specifically to
-#' compare speed of certain algorithms for Baer et al. (2021)
-#' [A generalized development of fragility indices]. Later, it was
-#' encorporated for greedy calculation in bin.fi for speed.
+#' This is an internal function, please use bin.fi instead
 #'
 #' @param crosstab a 2x2 contingency table with interventions on rows and outcomes on columns
 #' @param get.p a function inputting a table and outputting a p-value
 #' @param alpha a scalar numeric for the significance cutoff, by default 0.05
 #' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
-#' [incidence fragility] article for explanation.
+#' [incidence fragility index] article for explanation.
 #'
 #' @return a list containing the signed fragility index, in addition to the modified contingency
 #' table which has reversed statistical significance and the p value sequence (as in `greedy.fi`)

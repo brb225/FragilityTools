@@ -4,7 +4,7 @@
 \alias{bin.fi.walsh}
 \title{Original fragility index calculation, for binary data}
 \usage{
-bin.fi.walsh(crosstab, get.p, alpha = 0.05, dir = "both", group = "both")
+bin.fi.walsh(crosstab, get.p, alpha = 0.05, dir = "both", group = "event")
 }
 \arguments{
 \item{crosstab}{a 2x2 contingency table with groups on the rows}
@@ -13,11 +13,11 @@ bin.fi.walsh(crosstab, get.p, alpha = 0.05, dir = "both", group = "both")
 
 \item{alpha}{a numeric for the significance cutoff, 0.05 by default}
 
-\item{dir}{a character, either "left", "right", or "both". The default is "both". Walsh originally used
-'left'.}
+\item{dir}{a character, either "left", "right", or "both". The default is "left". Walsh originally used
+'left' which increases the outcome count in the left column (which is typically events)}
 
 \item{group}{a character specifying how to choose the single group in which to make modifications.
-The options are "event" for the fewest events (default), 'nonevent' for the fewest nonevents, or
+The options are: 'event' for the fewest events (default), 'nonevent' for the fewest nonevents, or
 'both' for the fewest overall. We assume that events are in the first column.}
 }
 \value{

@@ -28,9 +28,8 @@ bin.fi(
 The exact algorithm is described in the \link{Incidence fragility index} article. It will return the exact fragility
 index possibly at the cost of longer run time. The original algorithm runs the algorithm proposed by Walsh et al. (2014).
 The 'original.bothdir' algorithm runs a natural variant of the original algorithm which allows for searching in both directions
-of the chosen group. The greedy algorithm is described in \link{Generalized fragility index} and efficiently upper bounds the fragility index.
-The hybrid approach is described in \link{Generalized fragility index} and first runs the greedy algorithm and then finetunes the output
-similar to the exact algorithm.}
+of the chosen group. The greedy algorithm is described in \link{Generalized fragility index} and efficiently upper bounds
+the fragility index. The hybrid approach first runs the greedy algorithm and then finetunes the output similar to the exact algorithm.}
 
 \item{test}{a string specifying the test, defaulting to 'fisher' for the Fisher exact test.
 Some alternatives are 'fisher.midp', 'pearson.chisq', 'ni.normal'.}

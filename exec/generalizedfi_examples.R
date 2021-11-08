@@ -1,4 +1,5 @@
 library(FragilityTools) #devtools::load_all()
+library(ggplot2)
 
 #### binary: 2x2 ####
 get.p <- function(mat) fisher.test(mat)$p.value
@@ -297,6 +298,7 @@ timeee <- system.time({
 })
 out.grid.t <- t(out.grid.t)
 
+out.grid.t[,3] <- rev(out.grid.t[,3]) ### hacky fix for now
 plt1.t <- ggplot2::qplot(out.grid.t[,3], out.grid.t[,1],
                geom = "line", xlim = c(min(p.grid), max(p.grid)),
                xlab = latex2exp::TeX("Modification likelihood threshold $q$"), ylab = latex2exp::TeX("Generalized fragility index $GFI_q$")
@@ -446,7 +448,7 @@ apply(gfi_age3, 2, summary)
 
 
 
-#### poisson: outcome w/ covariates ####
+#### poisson: outcome w/ covariates (incomplete) ####
 ## simulate data
 set.seed(123456789)
 n.pois <- 500
@@ -485,27 +487,3 @@ system.time({
 system.time({
   out.surv2 <- surv.fi(time, status, group, verbose=TRUE, q=0.9)  # -3
 })
-
-
-
-
-
-
-#### median gfi: voter totals ####
-fn <- function(n) pbinom(200, n, 1/1000)
-
-fl_vote_totals <- c(2912790,	2912253,	16415,	97488,	562,	2281,	17484,	622,	1371,	1804,	34,	6) # info from florida website
-turnout <- .7
-
-fl_eligible_voters_notBG <- sum(fl_vote_totals)/turnout - sum(fl_vote_totals[c(1,2)])
-
-us_vote_totals <- c(50999987, 50456002, 92875537)
-us_eligible_voters <- sum(us_vote_totals)
-
-p <- fl_eligible_voters_notBG/us_eligible_voters
-GFInon <- 538
-
-MGFI <- ceiling(GFInon/p)
-
-phyper(GFInon, fl_eligible_voters_notBG, us_eligible_voters-fl_eligible_voters_notBG, MGFI) # around 1/2
-#pbinom(GFInon, MGFI, p) # around 1/2

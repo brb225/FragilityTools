@@ -10,7 +10,7 @@ colnames(mat_walter) <- c('Died', 'Alive')
 mat_walter
 
 out1 <- bin.fi.incidence(mat_walter)
-plt1 <- incidence.plot(out1)
+plt1 <- incidence.plot(out1) # in paper
 #ggsave('tab1_fi_plot.eps', plt1, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 # 457 x 316
 
@@ -41,7 +41,7 @@ rownames(mat3) <- c('Treatment A', 'Treatment B')
 colnames(mat3) <- c('Event', 'Nonevent')
 
 out3 <- bin.fi.incidence(mat3)
-plt3 <- incidence.plot(out3)
+plt3 <- incidence.plot(out3) # in paper
 #ggsave('tab3_fi_plot.eps', plt3, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 
 # table 4
@@ -51,7 +51,7 @@ rownames(mat4) <- c('Treatment A', 'Treatment B')
 colnames(mat4) <- c('Event', 'Nonevent')
 
 out4 <- bin.fi.incidence(mat4)
-plt4 <- incidence.plot(out4)
+plt4 <- incidence.plot(out4) # in paper
 #ggsave('tab4_fi_plot.eps', plt4, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 
 # table 6
@@ -61,7 +61,7 @@ rownames(mat6) <- c('Treatment A', 'Treatment B')
 colnames(mat6) <- c('Event', 'Nonevent')
 
 out6 <- bin.fi.incidence(mat6)
-plt6 <- incidence.plot(out6)
+plt6 <- incidence.plot(out6) # in paper
 #ggsave('tab6_fi_plot.eps', plt6, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 
 # table 7
@@ -72,6 +72,20 @@ colnames(mat6) <- c('Event', 'Nonevent')
 
 out7 <- bin.fi.incidence(mat7)
 plt7 <- incidence.plot(out7)
-ggsave('tab7_fi_plot.eps', plt7, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
+#ggsave('tab7_fi_plot.eps', plt7, device='eps',  width = 75, height = 60, units = "mm", dpi=320)
 
 bin.fi(mat7, alg='original')$FI
+
+
+
+# get 2x2 table plot for article
+textsize <- 13
+plt_2by2 <- gridExtra::grid.arrange(plt1+theme(axis.title=element_text(size=textsize)),
+                                    plt3+theme(axis.title=element_text(size=textsize)),
+                                    plt4+theme(axis.title=element_text(size=textsize)),
+                                    plt6+theme(axis.title=element_text(size=textsize)),
+                                    nrow=2)
+ggsave('ifi_2by2.eps', plt_2by2, device=cairo_ps, fallback_resolution = 300,width = 60, height = 55, units = "mm", dpi=300, scale=2.9) #width=75
+ggsave('ifi_2by2.eps', plt_2by2,
+       device=cairo_ps, fallback_resolution = 300,
+       width = 60*.55, height = 55*.55, units = "mm", dpi=300) #width=75

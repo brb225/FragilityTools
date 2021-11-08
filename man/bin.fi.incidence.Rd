@@ -35,7 +35,8 @@ Alternatives include 'fisher.midp' and 'pearson.chisq'.}
 }
 \value{
 a matrix containing the sufficiently likely threshold values q at which there is
-a changepoint of the corresponding values of the incidence fragility index
+a changepoint and the corresponding values of the incidence fragility index. The value is
+the limit from the right.
 }
 \description{
 The function is used to calculate the incidence fragility indices for every possible sufficiently likely threshold.

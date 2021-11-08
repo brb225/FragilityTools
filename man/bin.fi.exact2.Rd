@@ -27,11 +27,11 @@ bin.fi.exact2(
 \link{incidence fragility} article for explanation.}
 
 \item{start.reversed}{a boolean for whether the start.fi value already reverses
-statistical significance. Note, FALSE just means unknown. (note to self: i should
-update this to be true/false/na)}
+statistical significance. Note, FALSE just means unknown. (note: in a future update, this
+will be true/false/na)}
 
 \item{start.p}{The p value of the table with reversed statistical significance, paired with
-the parameter start.reversed}
+the parameter start.reversed. Defaults to NA when knowledge of reversal is not known}
 }
 \value{
 a list containing the signed fragility index and other accompanying values,

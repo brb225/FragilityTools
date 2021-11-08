@@ -12,7 +12,7 @@ dd <- data.frame(x=x.grid, y=y.grid)
 get_plt <- function(l,u) {
   conff <- round(pnorm(u, mean=mu.true)-pnorm(l, mean=mu.true),3)
   print(paste0(c(conff, c(l,u)), sep='; '))
-  qplot(x,y,data=dd,geom="line",ylab='density',xlab='outcome')+
+  qplot(x,y,data=dd,geom="line",ylab='Density',xlab='Outcome')+
   geom_ribbon(data=subset(dd,x>l & x<u),
               aes(ymax=y,ymin=0),
               fill="grey10",colour=NA,alpha=0.5)+

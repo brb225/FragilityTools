@@ -19,18 +19,14 @@ bin.fi.greedy(
 \item{alpha}{a scalar numeric for the significance cutoff, by default 0.05}
 
 \item{can.vary}{a 2x2 boolean matrix for whether each entry can decrease. See the
-\link{incidence fragility} article for explanation.}
+\link{incidence fragility index} article for explanation.}
 }
 \value{
 a list containing the signed fragility index, in addition to the modified contingency
 table which has reversed statistical significance and the p value sequence (as in \code{greedy.fi})
 }
 \description{
-Do not use this function. It is a variant of greedy.fi tailored for
-2x2 contingency tables. It was written specifically to
-compare speed of certain algorithms for Baer et al. (2021)
-\link{A generalized development of fragility indices}. Later, it was
-encorporated for greedy calculation in bin.fi for speed.
+This is an internal function, please use bin.fi instead
 }
 \examples{
 x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))

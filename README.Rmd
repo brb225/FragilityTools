@@ -7,9 +7,9 @@ references:
   - family: Walsh
     first: Michael
   - family: Srinathan
-    first: Sadeesh K
+    first: Sadeesh K.
   - family: McAuley
-    first: Daniel F
+    first: Daniel F.
   - family: Mrkobrada
     first: Marko
   - family: Levine
@@ -17,11 +17,11 @@ references:
   - family: Ribic
     first: Christine
   - family: Molnar
-    first: Amber O
+    first: Amber O.
   - family: Dattani
-    first: Neil D
+    first: Neil D.
   - family: Dattani
-    first: Neil D
+    first: Neil D.
   - family: Burke
     first: Andrew
   - family: Guyatt
@@ -37,11 +37,11 @@ references:
   container-title: Journal of Clinical Epidemiology
   volume: 67
   number: 6
-  pages: 622-628
+  page: 622-628
   issued:
   - year: 2014
 - id: baer2021samplesize
-  title: 'Fragility Index Based Clinical Trial Design: Sample Size Calculations'
+  title: 'The fragility index can be used for sample size calculations in clinical trials'
   author:
   - family: Baer
     given: Benjamin R.
@@ -53,12 +53,14 @@ references:
     given: Mary
   - family: Wells
     given: Martin T.
-  container-title: Under revision at Journal of Clinical Epidemiology
+  container-title: Journal of Clinical Epidemiology
+  volume: 139
+  page: 199-209
   issued:
   - year: 2021
   type: article-journal
-- id: baer2021incidence
-  title: 'The Incidence Fragility Index: An Exact Fragility Index For Only Sufficiently Likely Modifications'
+- id: baer2021likely
+  title: 'Fragility Indices For Only Sufficiently Likely Modifications'
   author:
   - family: Baer
     given: Benjamin R.
@@ -70,7 +72,7 @@ references:
     given: Stephen E.
   - family: Wells
     given: Martin T.
-  container-title: Under revision at P.N.A.S.
+  container-title: Proceedings of the National Academy of Sciences, in press
   issued:
   - year: 2021
   type: article-journal
@@ -87,7 +89,7 @@ references:
     given: Mary
   - family: Wells
     given: Martin T.
-  container-title: Under revision at BMC Medical Research Methodology
+  container-title: BMC Medical Research Methodology, in press
   issued:
   - year: 2021
   type: article-journal
@@ -106,7 +108,7 @@ knitr::opts_chunk$set(
 
 # FragilityTools
 
-The goal of FragilityTools is to provide a toolbox for researchers interested in the fragility index. The toolbox covers methodologies developed across four articles [@baer2021samplesize; @baer2021incidence; @baer2021ltfu].
+The goal of FragilityTools is to provide a toolbox for researchers interested in the fragility index. The toolbox covers methodologies developed across three articles [@baer2021samplesize; @baer2021likely; @baer2021ltfu].
 
 ## Installation
 
@@ -123,7 +125,6 @@ The first step of any analysis is to load the package with:
 
 ```{r example}
 library(FragilityTools)
-## basic example code
 ```
 
 The fragility index was created by @walsh2014fragility to study the robustness of statistical decisions. They defined the fragility index to be the smallest count of patient outcome modifications needed to reverse statistical significance. At first, the definition was only for initially statistical significant decisions, but it was quickly extended to initially insignificant decisions as well. Suppose that we observe the data below from a two group clinical trial with a binary (or dichotomous) endpoint:
@@ -140,7 +141,7 @@ out <- bin.fi(mat, test='fisher')
 out$mat
 ```
 
-The function `bin.fi`, short for "binary fragility index", calculates the fragility index by finding an alternative contingency table which reverses statistical significance and has the fewest possible rowwise modifications. Above we see that the returned contingency table has 3 fewer events in the treatment group. Since that contingency table reverses statistical significance (with p = `r fisher.test(out$mat)$p.value`) and no contingency table with fewer modifications does, the fragility index equals 3. Therefore there exists three patients for which their outcome being different would have led to a different statistical conclusion. Out of a trial with `r sum(mat)` patients, this is a surprisingly small number, suggesting that the trial's statistical conclusion of a treatment effect could be fragile. 
+The function `bin.fi`, short for "binary fragility index", calculates the fragility index by finding an alternative contingency table which reverses statistical significance and has the fewest possible rowwise modifications. Above we see that the returned contingency table has 3 fewer events in the treatment group. Since that contingency table reverses statistical significance (with p = `r fisher.test(out$mat)$p.value`) and no contingency table with fewer modifications does, the fragility index equals 3. Therefore there exists three patients for which their outcome being different would have led to a different statistical conclusion. Out of a trial with `r sum(mat)` patients, this may be a surprisingly small number, suggesting that the trial's statistical conclusion of a treatment effect could be fragile. 
 
 We now review the core functions in the package by separately considering the methodological development in each of the above articles. We will only briefly review the functions: more exentensive documentation and examples are available in the help files for each function and the executable `.R` files.
  
@@ -150,11 +151,15 @@ The fragility index based sample size calculations in @baer2021samplesize can be
 
 The function `general.fi.samplesize` performs the sample size calculation for given parameters, while the function `genreal.fi.sscurve` conveniently loops over `general.fi.samplesize` to perform sample sizes at varying fragility index tolerances. The functions `get.rejection.rates` and `get.traditional.ss.params` to understand the statistical properties of the designed tests. 
 
-### The incidence fragility indices
+### The incidence and generalized fragility indices
 
-The incidence fragility index examples in @baer2021incidence can be reproduced using the code in `FragilityTools/exec/`. The file `/incidencefi_examples.R` is a script which provides all the output that appears in the article. 
+The incidence fragility index examples in @baer2021likely can be reproduced using the code in `FragilityTools/exec/`. The file `/incidencefi_examples.R` is a script which provides all the output concerning incidence fragility indices that appears in the article. 
 
 The function `bin.fi` can calculate the incidence fragility index given a constrain on the per-patient sufficiently likely threshold through the `q` argument. The incidence fragility indices for each possible threshold `q` can be calculated using the function `bin.fi.incidence`. The output can be conveniently visualized using `incidence.plot`.
+
+The generalized fragility index examples in @baer2021likely can be reproduced using the code in `FragilityTools/exec/`. The file `/generalizedfi_examples.R` is a script which provides all the output concerning generalized fragility indices that appears in the article and several other examples. 
+
+The function `greedy.fi` is the workhorse which is under the hood of each of the following functions. It efficiently approximates fragility indices with a greedy algorithm. The function `surv.fi` allows for calculating fragility indices with time-to-event outcomes. The function `ttest.fi` allows for calculating fragility indices corresponding to one-sample t tests. The function `binmeta.fi` allows for calculating fragility indices corresponding to meta analyses with 2 x 2 contingency tables. The function `glm.fi` returns the coefficient table from `stats::glm` augmented with fragility indices for each coefficient test. The function `glm.gaussian.covariate.fi` allows for calculating fragility indices when a gaussian distributed covariate is modified in a `glm` such a logistic regression.
 
 ### The LTFU-aware fragility indices
 

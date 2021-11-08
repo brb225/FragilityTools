@@ -5,7 +5,7 @@
 
 The goal of FragilityTools is to provide a toolbox for researchers
 interested in the fragility index. The toolbox covers methodologies
-developed across four articles (Baer, Gaudino, Fremes, et al. 2021;
+developed across three articles (Baer, Gaudino, Fremes, et al. 2021;
 Baer, Gaudino, Charlson, et al. 2021; Baer, Fremes, et al. 2021).
 
 ## Installation
@@ -23,7 +23,6 @@ The first step of any analysis is to load the package with:
 
 ``` r
 library(FragilityTools)
-## basic example code
 ```
 
 The fragility index was created by Walsh et al. (2014) to study the
@@ -68,9 +67,9 @@ reverses statistical significance (with p = 0.0585605) and no
 contingency table with fewer modifications does, the fragility index
 equals 3. Therefore there exists three patients for which their outcome
 being different would have led to a different statistical conclusion.
-Out of a trial with 270 patients, this is a surprisingly small number,
-suggesting that the trial’s statistical conclusion of a treatment effect
-could be fragile.
+Out of a trial with 270 patients, this may be a surprisingly small
+number, suggesting that the trial’s statistical conclusion of a
+treatment effect could be fragile.
 
 We now review the core functions in the package by separately
 considering the methodological development in each of the above
@@ -95,18 +94,38 @@ perform sample sizes at varying fragility index tolerances. The
 functions `get.rejection.rates` and `get.traditional.ss.params` to
 understand the statistical properties of the designed tests.
 
-### The incidence fragility indices
+### The incidence and generalized fragility indices
 
 The incidence fragility index examples in Baer, Gaudino, Charlson, et
 al. (2021) can be reproduced using the code in `FragilityTools/exec/`.
 The file `/incidencefi_examples.R` is a script which provides all the
-output that appears in the article.
+output concerning incidence fragility indices that appears in the
+article.
 
 The function `bin.fi` can calculate the incidence fragility index given
 a constrain on the per-patient sufficiently likely threshold through the
 `q` argument. The incidence fragility indices for each possible
 threshold `q` can be calculated using the function `bin.fi.incidence`.
 The output can be conveniently visualized using `incidence.plot`.
+
+The generalized fragility index examples in Baer, Gaudino, Charlson, et
+al. (2021) can be reproduced using the code in `FragilityTools/exec/`.
+The file `/generalizedfi_examples.R` is a script which provides all the
+output concerning generalized fragility indices that appears in the
+article and several other examples.
+
+The function `greedy.fi` is the workhorse which is under the hood of
+each of the following functions. It efficiently approximates fragility
+indices with a greedy algorithm. The function `surv.fi` allows for
+calculating fragility indices with time-to-event outcomes. The function
+`ttest.fi` allows for calculating fragility indices corresponding to
+one-sample t tests. The function `binmeta.fi` allows for calculating
+fragility indices corresponding to meta analyses with 2 x 2 contingency
+tables. The function `glm.fi` returns the coefficient table from
+`stats::glm` augmented with fragility indices for each coefficient test.
+The function `glm.gaussian.covariate.fi` allows for calculating
+fragility indices when a gaussian distributed covariate is modified in a
+`glm` such a logistic regression.
 
 ### The LTFU-aware fragility indices
 
@@ -126,25 +145,25 @@ outputs a convenient visualization.
 
 Baer, Benjamin R., Stephen E. Fremes, Mario Gaudino, Mary Charlson, and
 Martin T. Wells. 2021. “On Clinical Trial Fragility Due to Patients Lost
-to Follow Up.” *Under Revision at BMC Medical Research Methodology*.
+to Follow Up.” *BMC Medical Research Methodology, in Press*.
 
 </div>
 
-<div id="ref-baer2021incidence">
+<div id="ref-baer2021likely">
 
 Baer, Benjamin R., Mario Gaudino, Mary Charlson, Stephen E. Fremes, and
-Martin T. Wells. 2021. “The Incidence Fragility Index: An Exact
-Fragility Index for Only Sufficiently Likely Modifications.” *Under
-Revision at P.N.A.S.*
+Martin T. Wells. 2021. “Fragility Indices for Only Sufficiently Likely
+Modifications.” *Proceedings of the National Academy of Sciences, in
+Press*.
 
 </div>
 
 <div id="ref-baer2021samplesize">
 
 Baer, Benjamin R., Mario Gaudino, Stephen E. Fremes, Mary Charlson, and
-Martin T. Wells. 2021. “Fragility Index Based Clinical Trial Design:
-Sample Size Calculations.” *Under Revision at Journal of Clinical
-Epidemiology*.
+Martin T. Wells. 2021. “The Fragility Index Can Be Used for Sample Size
+Calculations in Clinical Trials.” *Journal of Clinical Epidemiology*
+139: 199–209.
 
 </div>
 

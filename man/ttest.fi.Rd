@@ -4,12 +4,13 @@
 \alias{ttest.fi}
 \title{Calculate a fragility index for the one sample t test}
 \usage{
-ttest.fi(y, q = 1, mu0 = 0, alpha = 0.05, verbose = FALSE, cl = NULL)
+ttest.fi(y, q = 0.5, mu0 = 0, alpha = 0.05, verbose = FALSE, cl = NULL)
 }
 \arguments{
 \item{y}{a numeric vector of outcomes}
 
-\item{q}{a numeric for the minimum probability of outcome changes, by default 1}
+\item{q}{a numeric for the probability of outcome changes, by default .5. Larger values of q
+further constrain the permitted modifications.}
 
 \item{mu0}{the null mean, by default 0}
 
@@ -33,6 +34,7 @@ convention which is described in the generalized fragility index article.
 set.seed(123456790)
 y <- rnorm(100, mean = 0)
 p.grid <- seq(.1, .9, by = .1)
+#ttest.fi(y, q=.9, verbose=TRUE)$FI
 fi.grid <- sapply(p.grid, function(p) unlist(ttest.fi(y, q=p)[c('FI', 'sl')]))
 ggplot2::qplot(p.grid, fi.grid[1,], geom = c('point', "line"), xlim = c(min(p.grid), max(p.grid)),
    xlab = "Within-patient Likelihood bound", ylab = "Fragility index", main = "t test fragility indices (n=100)")

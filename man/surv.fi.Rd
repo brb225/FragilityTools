@@ -27,7 +27,8 @@ surv.fi(
 \item{test}{a string specifying the test type, default is 'logrank' but could also use
 'rmst.diff' for a restricted mean survival test.}
 
-\item{q}{the maximum per-patient probability of permitted modifications}
+\item{q}{the per-patient probability of permitted modifications, bigger values further
+constrain the permitted modificiations.}
 
 \item{cl}{a cluster from the \code{parallel} package, used to compute fragility index over
 each modified observation at each stage of the greedy algorithm}
@@ -52,7 +53,7 @@ for survival data. The function uses a log rank test by default.
 \examples{
 dat <- get.survival.data(100, 6)
 cl <- parallel::makeCluster(parallel::detectCores() - 2)
-out <- surv.fi(dat$time, dat$status, dat$group, q=0.3, cl = cl)
+out <- surv.fi(dat$time, dat$status, dat$group, q=0.3, cl = cl, verbose=TRUE)
 parallel::stopCluster(cl)
 
 }

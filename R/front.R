@@ -53,9 +53,8 @@ draw.binom <- function(ss, theta1 = .3, theta2 = .7,
 #' The exact algorithm is described in the [Incidence fragility index] article. It will return the exact fragility
 #' index possibly at the cost of longer run time. The original algorithm runs the algorithm proposed by Walsh et al. (2014).
 #' The 'original.bothdir' algorithm runs a natural variant of the original algorithm which allows for searching in both directions
-#' of the chosen group. The greedy algorithm is described in [Generalized fragility index] and efficiently upper bounds the fragility index.
-#' The hybrid approach is described in [Generalized fragility index] and first runs the greedy algorithm and then finetunes the output
-#' similar to the exact algorithm.
+#' of the chosen group. The greedy algorithm is described in [Generalized fragility index] and efficiently upper bounds
+#' the fragility index. The hybrid approach first runs the greedy algorithm and then finetunes the output similar to the exact algorithm.
 #' @param test a string specifying the test, defaulting to 'fisher' for the Fisher exact test.
 #' Some alternatives are 'fisher.midp', 'pearson.chisq', 'ni.normal'.
 #' @param alpha a number for the size of test, default 0.05.
@@ -765,7 +764,8 @@ get.rejection.rates <- function(get.p.val, get.sample.null = NULL, get.sample.al
 #' @param alpha a numeric for the significance threshold of the statistical test
 #'
 #' @return a matrix containing the sufficiently likely threshold values q at which there is
-#' a changepoint of the corresponding values of the incidence fragility index
+#' a changepoint and the corresponding values of the incidence fragility index. The value is
+#' the limit from the right.
 #'
 #' @examples
 #' x <- matrix(nrow=2,byrow=TRUE,c(5, 100, 30, 70),
@@ -1248,26 +1248,16 @@ greedy.fi <- function(X, Y,
     repl <- vector("list", length = nrow(YY.red))
     names(repl) <- rownames(YY.red)
     for (i in 1:length(repl)) { # loop over each patient to be modified
-      # # init
-      # holder <- vector('list', length=ncol(YY.red)) # temporary storage
-      # names(holder) <- colnames(YY.red)
-      #
-      # ## get the possible responses for each column, stored as list
-      # for (k in 1:ncol(YY)) {
-      #   holder[[k]] <- get.replacements[[k]](YY.red[[k]][i], XX.red[i,], row.names(YY.red)[i], Y, X)
-      #
-      #   ### check if there's no possible responses
-      #   if (length(holder[[k]])==0) stop(paste0('Outcome ', k, ' had no possible alternative values.'))
-      # }
-      #
-      # ## reorganize to a dataframe with # of columns = # of cols of YY, and number of rows = number of combinations
-      # holder <- expand.grid(holder, stringsAsFactors=FALSE)
       holder <- get.replacements(YY.red[i, ], XX.red[i, ], row.names(YY.red)[i], Y, X)
 
       ## make each row (ie each combination) a separate entry of a list
-      repl[[i]] <- split(holder, seq(nrow(holder)))
-      for (j in 1:length(repl[[i]])) { # fix the row names to be the same as original
-        rownames(repl[[i]][[j]]) <- rownames(YY.red)[i]
+      if (nrow(holder>0)) {
+        repl[[i]] <- split(holder, seq(nrow(holder)))
+        for (j in 1:length(repl[[i]])) { # fix the row names to be the same as original
+          rownames(repl[[i]][[j]]) <- rownames(YY.red)[i]
+        }
+      } else { # seq makes c(1,0) instead of c()
+        repl[[i]] <- split(holder, c())
       }
     } # end for loop over i(repl)
 
@@ -1275,22 +1265,32 @@ greedy.fi <- function(X, Y,
     max.num.resp.options <- max(unlist(lapply(repl, FUN = length)))
     out.p <- matrix(NA, nrow = length(repl), ncol = max.num.resp.options)
 
+    # quick termination check
+    if (max.num.resp.options==0) {
+      warning("Warning: no outcome modifications were feasible")
+      frag.ind.counter <- Inf
+      break
+    }
+
     # define function to get p vals
     ## import: repl, YY.red, XX, YY, get.p.val
     get.out.p.row <- function(i) {
       repl.i <- repl[[i]]
       out.p.row <- vector(length = length(repl.i))
+      if (length(repl[[i]])==0) return(vector(mode="numeric", length=0))
       for (j in 1:length(repl.i)) {
-        if (!any(is.na(repl.i[[j]]))) { # added "any" on jun 29 2021 while debugging surv.fi
-          YYY <- YY # just changed this to YYY while copy and pasting through
+        #if (!any(is.na(repl.i[[j]]))) { # added "any" on jun 29 2021 while debugging surv.fi
+          YYY <- YY
           YYY[rownames(YY.red)[i], ] <- repl.i[[j]]
           out.p.row[j] <- get.p.val(XX, YYY)
-        } else { ## 4/20/2021 added a feature that an NA replacement gives an NA p value
-          out.p.row[j] <- NA
-        }
+        #} else { ## 4/20/2021 added a feature that an NA replacement gives an NA p value
+        #  out.p.row[j] <- NA
+        #}
       }
       return(out.p.row)
     }
+
+    #browser()
 
     # get p value for all possible changes
     if (!is.null(cl)) {
@@ -1403,7 +1403,8 @@ greedy.fi <- function(X, Y,
 #' @param group a factor with levels representing group membership
 #' @param test a string specifying the test type, default is 'logrank' but could also use
 #' 'rmst.diff' for a restricted mean survival test.
-#' @param q the maximum per-patient probability of permitted modifications
+#' @param q the per-patient probability of permitted modifications, bigger values further
+#' constrain the permitted modificiations.
 #' @param cl a cluster from the `parallel` package, used to compute fragility index over
 #' each modified observation at each stage of the greedy algorithm
 #' @param alpha a number for the size of test
@@ -1417,14 +1418,14 @@ greedy.fi <- function(X, Y,
 #' @examples
 #' dat <- get.survival.data(100, 6)
 #' cl <- parallel::makeCluster(parallel::detectCores() - 2)
-#' out <- surv.fi(dat$time, dat$status, dat$group, q=0.3, cl = cl)
+#' out <- surv.fi(dat$time, dat$status, dat$group, q=0.3, cl = cl, verbose=TRUE)
 #' parallel::stopCluster(cl)
 #'
 #' @export
 surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
                     cl = NULL, alpha = .05,
                     tau = NULL, verbose = FALSE, max.time=Inf) {
-  max.likelihood <- q # renamed
+  max.likelihood <- 1-q # renamed and flipped so that big q has big FI
   #if (is.null(max.time)) max.time <- max(time)
   #min.time <- min(time)
 
@@ -1461,8 +1462,8 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
   # }
 
   # get event and censor models
-  mod.event <- survreg(Surv(time, status) ~ group, dist = "weibull")
-  mod.censor <- survreg(Surv(time, 1 - status) ~ 1, dist = "weibull")
+  mod.event <- survival::survreg(Surv(time, status) ~ group, dist = "weibull")
+  mod.censor <- survival::survreg(Surv(time, 1 - status) ~ 1, dist = "weibull")
 
   # some helper functions
   survreg2weib_shape <- function(sr_scale) 1/sr_scale
@@ -1836,7 +1837,8 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
 #' convention which is described in the generalized fragility index article.
 #'
 #' @param y a numeric vector of outcomes
-#' @param q a numeric for the minimum probability of outcome changes, by default 1
+#' @param q a numeric for the probability of outcome changes, by default .5. Larger values of q
+#' further constrain the permitted modifications.
 #' @param mu0 the null mean, by default 0
 #' @param alpha a numberic for the significance threshold, by default 0.05
 #' @param verbose A boolean for whether to print greedy.fi steps while running,
@@ -1850,6 +1852,7 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
 #' set.seed(123456790)
 #' y <- rnorm(100, mean = 0)
 #' p.grid <- seq(.1, .9, by = .1)
+#' #ttest.fi(y, q=.9, verbose=TRUE)$FI
 #' fi.grid <- sapply(p.grid, function(p) unlist(ttest.fi(y, q=p)[c('FI', 'sl')]))
 #' ggplot2::qplot(p.grid, fi.grid[1,], geom = c('point', "line"), xlim = c(min(p.grid), max(p.grid)),
 #'    xlab = "Within-patient Likelihood bound", ylab = "Fragility index", main = "t test fragility indices (n=100)")
@@ -1857,9 +1860,9 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
 #'    ylab = "Fragility index", main = "t test fragility indices (n=100)")
 #'
 #' @export
-ttest.fi <- function(y, q = 1, mu0 = 0, alpha = .05,
+ttest.fi <- function(y, q = .5, mu0 = 0, alpha = .05,
                      verbose = FALSE, cl=NULL) {
-  max.likelihood <- q # renamed
+  max.likelihood <- 1-q # renamed
 
   get.p.val <- function(X, Y) {
     y <- Y[[1]]
@@ -1904,7 +1907,10 @@ ttest.fi <- function(y, q = 1, mu0 = 0, alpha = .05,
     }
     # I should figure out whether o is a max or min.. then narrow down new.outcomes accordingly
 
-    return(data.frame(new.outcomes))
+    dat.no <- data.frame(new.outcomes)
+    colnames(dat.no) <- colnames(Y)
+    dat.no <- subset(dat.no, complete.cases(dat.no))
+    return(dat.no)
   }
   #}
   # if (outcome.alg == "data") {
@@ -2119,7 +2125,8 @@ binmeta.fi <- function(data, restr.study = NULL, method = "MH", sm = "RR",
 #' considered throughout the package.
 #'
 #' @param formula a formula, see the documention of 'glm' for more details
-#' @param family a description of the error distribution, see the documention of 'glm' for more details
+#' @param family a description of the error distribution, see the documention of 'glm' for more details.
+#' Currently only gaussian() and binomial() are supported.
 #' @param data a data frame with measurements on the columns and cases on the rows
 #' @param max.step an atomic vector for the max step of each response, for when the response type
 #' is restricted
@@ -2163,8 +2170,8 @@ glm.fi <- function(formula, family, data, max.step = 1, alpha = .05, cl = NULL, 
 
 #' Calculate a fragility index for a coefficient test in a GLM when modifying another covariate
 #'
-#' This function returns a fragility index (and accomponying information) for an interesting fragility index
-#' which only modified a randomly observed covariate when testing the coefficient of another covariate such
+#' This function returns a fragility index (and accompanying information) for an interesting fragility index
+#' which only modifies a randomly observed covariate when testing the coefficient of another covariate such
 #' as an intervention. This is the only example in the package which modified a covariate instead of an
 #' outcome (or response). We assume that the distribution of the covariate is some Gaussian. We accomplish the
 #' fragility measure by putting the covariate in the `Y` argument of `greedy.fi` and the
@@ -2177,7 +2184,7 @@ glm.fi <- function(formula, family, data, max.step = 1, alpha = .05, cl = NULL, 
 #' @param fam the family in a glm for the regression, by default binomial()
 #' @param cl A parallel cluster for faster calculation in greedy.fi, by default NULL
 #' @param verbose a boolean indicating whether to print status updates while running, by default TRUE
-#' @param q a numeric for the minimum probability of outcome changes, by default .9
+#' @param q a numeric for the minimum probability of outcome changes, by default .7
 #' @param alpha a numberic for the significance threshold, by default 0.05
 #'
 #' @return The output of greedy.fi (a list) with an additional element which has the
