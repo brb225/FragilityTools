@@ -58,11 +58,14 @@ draw.binom <- function(ss, theta1 = .3, theta2 = .7,
 #' @param test a string specifying the test, defaulting to 'fisher' for the Fisher exact test.
 #' Some alternatives are 'fisher.midp', 'pearson.chisq', 'ni.normal'.
 #' @param alpha a number for the size of test, default 0.05.
-#' @param q the minimum probability of allowable outcome modifications, defaults to 0 (allowing all modifications).
-#' Note that alg='original' or alg='original.bothdir' do not support this option.
+#' @param q the minimum probability of permitted outcome modifications, defaults to 0 (permitting all modifications).
+#' Note that alg='original' and alg='original.bothdir' do not support this option.
+#' @param r the minimum probability that a patient combination can reverse significance, default to 0 (reducing to the standard
+#' fragility index). Use alg='greedy' if r > 0.
 #' @param verbose a logical value for whether to print status updates while running
 #' @param fi.start the starting fragility index considered in the exact algorithm.
 #' @param delta the noninferiority margin for when test='ni.normal'
+#' @param nsim The number of simulations in the root finding algorithm when r>0, by default 10
 #'
 #' @return a list containing the fragility index and other values, depending on which algorithm is specified.
 #' The name of the fragility index in the list is 'FI'
@@ -78,10 +81,11 @@ draw.binom <- function(ss, theta1 = .3, theta2 = .7,
 bin.fi <- function(crosstab = NULL,
                    X = NULL, Y = NULL,
                    alg = "greedy", test = "fisher",
-                   alpha = .05, q = 0, verbose = FALSE,
-                   fi.start = NULL, delta = NULL) {
+                   alpha = .05, q = 0, r = 0, verbose = FALSE,
+                   fi.start = NULL, delta = NULL, nsim=10) {
   data.table <- crosstab # renamed
   min.p <- q # renamed
+  if (r>0&alg!='greedy') warning('Both r>0 and the algorithm is not greedy: we will treat r=0')
 
   # convert X,Y to data.table
   if (is.null(data.table)) {
@@ -206,8 +210,13 @@ bin.fi <- function(crosstab = NULL,
   mat.of.probs <- mat.of.probs[, c(2, 1)] / apply(mat.of.probs, 1, sum)
   can.vary <- mat.of.probs >= min.p
 
+  if (verbose) print(can.vary)
+
   if (alg=='greedy') {
-    out <- bin.fi.greedy(data.table, get.p = get.p, alpha = alpha, can.vary = can.vary)
+    if (r==0) out <- bin.fi.greedy(data.table, get.p = get.p, alpha = alpha, can.vary = can.vary)
+    if (r>0) {
+      out <- bin.fi.stochastic(data.table, get.p, can.vary, r=r, alpha=alpha, verbose=verbose, nsim=nsim)
+    }
   }
   if (alg=='hybrid') {
     out.warmstart <- bin.fi.greedy(data.table, get.p = get.p, alpha = alpha, can.vary = can.vary)
@@ -310,7 +319,7 @@ bin.fi.samplesize <- function(min.fi = 10, min.power = .8, alpha = .05, tau=.5,
 #' @param alpha a number for the size of test
 #' @param tau the quantile of FI to bound, default 1/2
 #' @param nsim the number of simulated draws to consider when estimating the power
-#' and expected fragility index quantile
+#' and fragility index quantile
 #' @param eps a parameter to control the error. The smaller is it, the more precise the
 #' output but the longer the function will take to run.
 #' @param algorithm A string specifying the algorithm to use to calculate fragility indices.
@@ -1222,6 +1231,7 @@ greedy.fi <- function(X, Y,
 
   # loop while same_significance
   starting.p.val <- get.p.val(XX, YY)
+  current.p.val <- starting.p.val # just for use to check whether p value going wrong direction mid algorithm
   if (verbose) print(paste0("0. Starting p val: ", round(starting.p.val, 3)))
   all.p.vals <- c(starting.p.val)
   old.p.val <- 999 # not possible value
@@ -1290,8 +1300,6 @@ greedy.fi <- function(X, Y,
       return(out.p.row)
     }
 
-    #browser()
-
     # get p value for all possible changes
     if (!is.null(cl)) {
       parallel::clusterExport(cl, varlist = c("repl", "YY.red", "XX", "YY", "get.p.val"), envir = environment())
@@ -1317,6 +1325,15 @@ greedy.fi <- function(X, Y,
     best.i <- best.inds[1]
     best.j <- best.inds[2]
 
+    # terminate if best p value is in wrong direction
+    if (frag.ind.counter > 1 & (alpha - starting.p.val)*(current.p.val - out.p[best.i, best.j]) > 0) {
+      warning("did not converge: no outcome modification remaining moves the p values towards reversing significance")
+      #print(frag.ind.counter)
+      #print(c(alpha, starting.p.val, current.p.val, out.p[best.i, best.j]))
+      frag.ind.counter <- Inf
+      break
+    }
+
     # update variables
     my_row <- rownames(YY) == rownames(YY.red)[best.i]
     current.p.val <- out.p[best.i, best.j]
@@ -1325,14 +1342,12 @@ greedy.fi <- function(X, Y,
     changed.patients <- c(changed.patients, rownames(YY.red)[best.i])
 
     frag.ind.counter <- frag.ind.counter + 1
-    old.resp <- subset(data.frame(XX, YY), my_row) # YY[my_row,]
+    old.resp <- subset(data.frame(XX, YY), my_row)
     old.resp.YY <- subset(YY, my_row)
-    # old.resp <- subset(YY, my_row)# YY[my_row,]
     new.resp.YY <- repl[[best.i]][[best.j]]
-    YY[my_row, ] <- new.resp.YY#repl[[best.i]][[best.j]]
+    YY[my_row, ] <- new.resp.YY
 
     old.resp.df <- rbind(old.resp.df, old.resp)
-    # new.resp.df <- rbind(new.resp.df, repl[[best.i]][[best.j]])
     new.resp.df <- rbind(new.resp.df, cbind(subset(XX, my_row), repl[[best.i]][[best.j]]))
 
     if (verbose) {
@@ -1361,19 +1376,14 @@ greedy.fi <- function(X, Y,
     } # how does this interact with dont consider???
     spinning.oldnew <- TRUE
     for (i.son in 1:dim(old.resp.YY)[2]) {
-      #print(old.resp.YY[[i.son]])
-      #print(new.resp.YY[[i.son]])
-      #print(spinning.oldnew)
-      #print(isTRUE(all.equal(old.resp.YY[[i.son]], new.resp.YY[[i.son]])))
       spinning.oldnew <- spinning.oldnew & isTRUE(all.equal(old.resp.YY[[i.son]], new.resp.YY[[i.son]]))
     }
-    #print(spinning.oldnew)
     if (spinning.oldnew) { # old_response == new_response
       warning("did not converge: the best outcome modification for each remaining patient was their original outcome")
       frag.ind.counter <- Inf
       break
     }
-    # if (old.p.val == current.p.val) { # this is actually too numerically stable
+    # if (old.p.val == current.p.val) { # this is actually too numerically unstable
     #   warning("did not converge since only.consider was too small: ie, all patients had their response change without altering significance of test")
     #   frag.ind.counter <- Inf
     #   break
@@ -2267,4 +2277,139 @@ glm.gaussian.covariate.fi <- function(X.regr, y.regr, fam=binomial(), cl=NULL,
   # y.mod[selected.inds] <- out$new_responses[,2]
   # out$sl <- normal.sl(y, y.mod)
   return(out)
+}
+
+
+#' Stochastic generalized fragility indices
+#'
+#' This function calculates the stochastic generalized fragility indices, which are a stochastic version of the
+#' generalized fragility indices. They ensure that a random collection of patients can reverse significance with
+#' sufficiently high probability, thus ensuring that typical patients can reverse significance.
+#'
+#' @param X a data frame of covariates which are not subject to modification.
+#' @param Y a data frame of responses which are subject to modification.
+#' @param get.replacements a function which outputs a data frame containing all possible row replacements
+#' for Y which are to be considered. The functions inputs the row of Y under consideration,
+#' the row of X under consideration, the row name, and the full original data frames X and Y.
+#' @param get.p.val a function that inputs X and Y and returns a p value
+#' @param r the index of the stochastic fragility index, by default 0.5. Having r=0 is equivalent to the generalized fragility
+#' index and having r=1 means that all patient combinations of the output size can reverse significance.
+#' @param nsim The number of simulations in the root finding algorithm, by default 10
+#' @param gfi.init An initialization of the output size, by default 10
+#' @param alpha a numeric for the significance cutoff
+#' @param verbose a logical value for whether to print status updates while running
+#' @param cl a cluster from the `parallel` package, used to compute fragility index over
+#' each modified observation at each stage of the greedy algorithm
+#' @param D a parameter for Polyak-Ruppert averaging, by default 20
+#' @param gamma a parameter for Polyak-Ruppert averaging, by default 0.2
+#' @param init.step a parameter for Polyak-Ruppert averaging, by default TRUE
+#'
+#' @return a length 2 list, with the first entry giving the stochastic generalized fragility index and the
+#' last entry giving the history of the root finding algorithm.
+#'
+#' @examples
+#' n <- 100
+#' X <- data.frame("tr_group" = sample(c("treated", "not treated"), n, TRUE))
+#' Y <- data.frame("outcome" = sample(c("sick", "healthy"), n, TRUE))
+#' get.p.val <- function(X, Y) fisher.test(table(X[[1]], Y[[1]]))$p.value
+#' get.replacements <- function(y, x, rn, Y, X) data.frame(Y=setdiff(unique(Y[[1]]), y))
+#'
+#' stochastic.fi(X, Y, get.replacements, get.p.val)
+#'
+#' @export
+stochastic.fi <- function(X, Y, get.replacements, get.p.val,
+                        r=0.5, nsim=10, qfi.init = 10L,
+                        alpha=.05, verbose=FALSE, cl = NULL,
+                        D=20, gamma=.2, init.step=TRUE) {
+  # note, this algorithm only gives some root, not the smallest root.. for eg it will likely "fail" for r=1
+
+  #do some checks
+  if (r==1) warning('The output cannot be trusted for this r: the value may be bigger than the minimum such SGFI')
+
+  out.fi <- greedy.fi(X, Y, get.replacements, get.p.val, alpha, verbose=FALSE, cl=cl)
+  classical.fi <- abs(out.fi$FI)
+  if (is.infinite(classical.fi)) return(list('FI'=Inf)) # stop if reversing is infeasible with all data
+  # any way to modify find_zero to avoid this check?
+
+  if (r==0) return(list('FI'=out.fi$FI))
+
+  # the noisy function to find root of expectation
+  centered_prob_of_rev <- function(ss) { # should parallelize over this instead of greedy.fi
+    ss <- floor(ss)
+    did_reverse <- c()
+    for (sim in 1:nsim) {
+      pats <- sample(rownames(X), ss)
+      suppressWarnings(
+        out <- greedy.fi(X, Y, get.replacements, get.p.val, alpha, verbose=FALSE, cl=cl, only.consider=pats)
+      )
+      did_reverse <- c(did_reverse, is.finite(out$FI))
+    }
+    return(mean(did_reverse) - r)
+  }
+
+  fz <- find_zero(centered_prob_of_rev, x.init = qfi.init, init.step = init.step,
+                  D=D, burnin_dur = 10, gamma=gamma, eps=.05, fz.verbose=verbose,
+                  limits=c(classical.fi, nrow(X)), proj = function(a) max(min(a, nrow(X)), classical.fi))
+  fz$x <- ceiling(fz$x)*(-1)^out.fi$rev
+  names(fz)[1] <- 'FI'
+  return(fz)
+}
+
+
+#' Bayesian RIR calculation
+#'
+#' The Bayesian RIR is a Bayesian view of the the Robustness of an Inference to Replacement proposed by Frank et al. (2021).
+#' Unlike the RIR, it takes the posterior expectation of the final quantity in the definition of the RIR. This is explained
+#' in more detail in a letter to the editor to Frank et al. (2021) in the Journal of Clinical Epidemiology.
+#'
+#' @param mat a 2 x 2 contingency table of counts. The treatment should be on the first row and the event should be on
+#' the first column
+#' @param get.p a function which inputs a 2x2 matrix and outputs a p value (numeric)
+#' @param alpha a numeric for the significance threshold, by default 0.05
+#' @param iters the number of monte carlo iterations, by default 10000
+#' @param cl A parallel cluster to parellelize the monte carlo iterates, by default NULL
+#'
+#' @return a length 2 numeric vector, giving the conditional posterior mean number of replacements and
+#' the posterior probability of reversing not being possible
+#'
+#' @examples
+#' walter.mat <- structure(c(0, 5, 96, 90), .Dim = c(2L, 2L)) # data from Walter, in correct formatting
+#' rir(walter.mat)
+#'
+#' @export
+rir <- function(mat, get.p = function(mat) fisher.test(mat)$p.value, alpha = 0.05, iters=10000, cl=NULL) {
+  orig.p <- get.p(mat)
+
+  # helper function
+  same.sig <- function(p1, p2) {
+    if (p1 < alpha) return(p2 < alpha)
+    else return(p2 >= alpha)
+  }
+
+  # get the workhorse function to realize posterior values
+  get_k <- function() {
+    mod.p <- orig.p
+    did.rev<-FALSE
+    Y <- 0 # starts at 0
+    for (k in 1:mat[1,2]) {
+      Y <- Y + extraDistr::rbbinom(1,1, mat[2,1] + 0.5, mat[2,2] + 0.5) # iteratively adds on a renoised version of each patient
+      # note, not the same as rbbinom(k, 1, ...) as it takes a conditional development
+      mod.p <- get.p(mat + matrix(nrow=2,ncol=2,byrow=TRUE,c(Y, -Y, 0, 0)))
+      if (!same.sig(orig.p, mod.p)) {
+        did.rev<-TRUE
+        break
+      }
+    }
+    if (!did.rev) k <- Inf
+    return(k)
+  }
+
+  # loop over it iters times to get posterior average
+  if (is.null(cl)) {
+    k.out <- replicate(iters, get_k())
+  } else {
+    stop('Not implemented in parallel yet, please leave the cl argument as default')
+  }
+
+  return(c(mean(k.out[is.finite(k.out)]), mean(is.infinite(k.out))))
 }

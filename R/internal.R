@@ -196,7 +196,7 @@ bin.fi.exact2 <- function(crosstab, get.p, alpha = 0.05, fi.start = 1,
 #' get.p <- function(tab) fisher.test(tab)$p.value
 #' FragilityTools:::bin.fi.exact(x, get.p)
 bin.fi.exact <- function(crosstab, get.p, alpha = 0.05, max.f = Inf, verbose = FALSE) {
-  stop("Please use bin.fi.exact2 instead") # added when depracating
+  warning("Please use bin.fi.exact2 instead") # added when depracating
 
   x <- crosstab # renamed
   if (is.null(rownames(x))) stop("Please include rownames on the data table")
@@ -384,6 +384,10 @@ bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both', group='event
 #' @param alpha a scalar numeric for the significance cutoff, by default 0.05
 #' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
 #' [incidence fragility index] article for explanation.
+#' @param crosstab.offset a 2x2 contingency table with interventions on rows and outcomes on columns.
+#' The default has all entries equal to 0. These patients are not subject to modification, unlike crosstab,
+#' but they do contribute to the evaluation of the p value, like crosstab. Note, this is a variant of the
+#' 'dont.consider' argument in greedy.fi
 #'
 #' @return a list containing the signed fragility index, in addition to the modified contingency
 #' table which has reversed statistical significance and the p value sequence (as in `greedy.fi`)
@@ -394,14 +398,19 @@ bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both', group='event
 #' rownames(x) <- c("control", "treatment")
 #' get.p <- function(tab) fisher.test(tab)$p.value
 #' FragilityTools:::bin.fi.greedy(x, get.p)
-bin.fi.greedy <- function(crosstab, get.p, alpha=.05, can.vary = matrix(rep(TRUE, 4), nrow = 2)) {
+bin.fi.greedy <- function(crosstab, get.p, alpha=.05,
+                          can.vary = matrix(rep(TRUE, 4), nrow = 2),
+                          crosstab.offset = matrix(rep(0,4), nrow = 2)) {
   x <- crosstab # renamed
+
+  get.p.val <- get.p
+  get.p <- function(mm) get.p.val(mm+crosstab.offset) # redefine get.p to always augment data with fixed patients
 
   init.p <- get.p(x)
   signFI <- (-1)^(init.p>=alpha)
   FIcount <- 0
 
-  p_value_sequence <- init.p
+  p.seq <- init.p
 
   mats <- list(outer(c(1,0),c(-1,1)),
                outer(c(0,1),c(-1,1)),
@@ -417,12 +426,22 @@ bin.fi.greedy <- function(crosstab, get.p, alpha=.05, can.vary = matrix(rep(TRUE
 
   while (TRUE) {
     FIcount <- FIcount+1
-
     out <- plyr::laply(mats, get.p.mod)
-    if (all(is.na(out))) {
+
+    if (all(is.na(out))) { # no feasible modifications
       FIcount <- Inf
       break
     }
+    if (FIcount > sum(x)) { # ran out of patients to modify, will also prevent loops due to p being constant
+      FIcount <- Inf
+      break
+    }
+    mout <- ifelse(init.p<alpha, max(out, na.rm=TRUE), min(out, na.rm=TRUE))
+    if (FIcount > 1 & (alpha - init.p)*(p.seq[FIcount] - mout) > 0) { # cannot make progress
+      FIcount <- Inf
+      break
+    }
+
     if (init.p < alpha) {
       ind <- which.max(out)
     } else {
@@ -430,11 +449,94 @@ bin.fi.greedy <- function(crosstab, get.p, alpha=.05, can.vary = matrix(rep(TRUE
     }
     x <- x + mats[[ind]]
 
-    p_value_sequence <- c(p_value_sequence, get.p(x))
+    p.seq <- c(p.seq, get.p(x))
     if ((init.p < alpha & get.p(x) >= alpha) | (init.p >= alpha & get.p(x) < alpha)) break
   }
-  return(list(FI=FIcount*signFI, mat=x, p_value_sequence = p_value_sequence))
+
+  return(list(FI=FIcount*signFI, mat=x, p_value_sequence = p.seq, rev = init.p>=alpha))
 }
+
+
+
+
+#' Stochastic generalized fragility indices for 2x2 tables
+#'
+#' Use bin.fi instead of this function.
+#' This is an internal function which calculates stochastic generalized fragility indices for 2x2 tables
+#' in a more optimized way than stochastic.fi.
+#'
+#' @param crosstab a 2x2 contingency table with interventions on rows and outcomes on columns
+#' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
+#' [incidence fragility index] article for explanation.
+#' @param get.p a function that inputs a matrix and returns a p value
+#' @param r the index of the stochastic fragility index, by default 0.5. Having r=0 is equivalent to the generalized fragility
+#' index and having r=1 means that all patient combinations of the output size can reverse significance.
+#' @param nsim The number of simulations in the root finding algorithm, by default 10
+#' @param gfi.init An initialization of the output size, by default 10
+#' @param alpha a numeric for the significance cutoff
+#' @param verbose a logical value for whether to print status updates while running
+#' @param cl a cluster from the `parallel` package, used to compute fragility index over
+#' each modified observation at each stage of the greedy algorithm
+#' @param D a parameter of Polyak-Ruppert averaging, by default 40
+#' @param gamma a parameter of Polyak-Ruppert averaging, by default .2
+#'
+#' @return a length 2 list, with the first entry giving the stochastic generalized fragility index and the
+#' last entry giving the history of the root finding algorithm.
+#'
+#' @examples
+#' x <- matrix(nrow = 2, byrow = TRUE, rgeom(4, 1 / 50))
+#' colnames(x) <- c("event", "nonevent")
+#' rownames(x) <- c("control", "treatment")
+#' get.p <- function(tab) fisher.test(tab)$p.value
+#' FragilityTools:::bin.fi.stochastic(x, get.p)
+#'
+#' @export
+bin.fi.stochastic <- function(crosstab, get.p,
+                              can.vary = matrix(rep(TRUE, 4), nrow = 2),
+                              r=0.5, nsim=10, qfi.init = 10L,
+                              alpha=.05, verbose=FALSE, cl = NULL,
+                              D=40, gamma=.2) {
+  # note, this algorithm only gives some root, not the smallest root.. for eg it will likely "fail" for r=1
+
+  #do some checks
+  if (r==1) warning('The output cannot be trusted for this r: the output may be larger than the minimum such SGFI')
+
+  out.fi <- bin.fi.greedy(crosstab, get.p, alpha, can.vary)
+  classical.fi <- abs(out.fi$FI)
+  if (is.infinite(classical.fi)) return(Inf) # stop if reversing is infeasible with all data
+  # any way to modify find_zero to avoid this check?
+
+  # the noisy function to find root of expectation
+  pat.long <- c(rep('a', crosstab[1,1]), rep('b', crosstab[1,2]), rep('c', crosstab[2,1]), rep('d', crosstab[2,2]))
+  centered_prob_of_rev <- function(ss) { # should parallelize over this instead of greedy.fi
+    ss <- floor(ss)
+    did_reverse <- c()
+    for (sim in 1:nsim) {
+      # get patients who have permitted modifications
+      x.v <- sample(pat.long, ss)
+      x.v <- matrix(nrow=2,byrow=TRUE, c(sum(x.v=='a'), sum(x.v=='b'), sum(x.v=='c'), sum(x.v=='d')))
+
+      suppressWarnings(
+        out <- bin.fi.greedy(x.v, get.p, alpha, can.vary, crosstab-x.v)
+      )
+      did_reverse <- c(did_reverse, is.finite(out$FI))
+    }
+    return(mean(did_reverse) - r)
+  }
+
+  fz <- find_zero(centered_prob_of_rev, x.init = qfi.init,
+                  D=D, burnin_dur = 10, gamma=gamma, eps=.05, fz.verbose=verbose,
+                  limits=c(classical.fi, sum(crosstab)), proj = function(a) max(min(a, sum(crosstab)), classical.fi))
+  fz$x <- ceiling(fz$x)*(-1)^out.fi$rev
+  names(fz)[1] <- 'FI'
+  return(fz)
+}
+
+
+
+
+
+
 
 
 #' Find when an increasing function observed with noise crosses x-axis
@@ -463,7 +565,8 @@ bin.fi.greedy <- function(crosstab, get.p, alpha=.05, can.vary = matrix(rep(TRUE
 #' @examples
 #' FragilityTools:::find_zero(function(x) x - 100 + rnorm(1), fz.verbose = FALSE)
 find_zero <- function(f, x.init = 10L, fz.verbose = FALSE, D = 1, gamma = .6,
-                      burnin_dur = 16, eps = .1, proj = function(a) a, limits = c(1, 9999999)) {
+                      burnin_dur = 16, eps = .1, proj = function(a) a, limits = c(1, 9999999),
+                      init.step=TRUE) {
   # updates proj to take into account the upper and lower limits
   proj. <- function(a) {
     out <- proj(a)
@@ -474,50 +577,55 @@ find_zero <- function(f, x.init = 10L, fz.verbose = FALSE, D = 1, gamma = .6,
 
   # tries to get lowest value with f>=0
   x <- x.init
-  y <- f(x)
-  history <- c("x" = x, "y" = y, "avg" = NA)
-  if (fz.verbose) print(c(x, y))
+  history <- matrix(c("x" = 0, "y" = 0, "avg" = 0),nrow=1)[0,]
+  colnames(history) <- c('x', 'y', 'avg')
 
-  ## init
-  if (y < 0) {
-    # increase exponentially until changing sign of f
-    while (y < 0) {
-      old_y <- y
-      old_x <- x
+  if (init.step) {
+    y <- f(x)
+    history <- rbind(history, c("x" = x, "y" = y, "avg" = Inf))
+    if (fz.verbose) print(c(x, y))
 
-      x <- proj.(2 * old_x)
-      y <- f(x)
+    ## init
+    if (y < 0) {
+      # increase exponentially until changing sign of f
+      while (y < 0) {
+        old_y <- y
+        old_x <- x
 
-      if (fz.verbose) print(c(x, y))
-      history <- rbind(history, c("x" = x, "y" = y, "avg" = NA))
+        x <- proj.(2 * old_x)
+        y <- f(x)
 
-      if (old_x == limits[2] & x == limits[2]) break
-    }
-    if (fz.verbose) print("finished increasing")
+        if (fz.verbose) print(c(x, y))
+        history <- rbind(history, c("x" = x, "y" = y, "avg" = Inf))
 
-    x <- (y * old_x - old_y * x) / (y - old_y)
-    x <- proj.(x)
-  } else if (y == 0) {
-    x <- x
-  } else {
-    # decrease exponentially until changing sign of f
-    while (y > 0) {
-      old_y <- y
-      old_x <- x
+        if (old_x == limits[2] & x == limits[2]) break
+      }
+      if (fz.verbose) print("finished increasing")
 
-      x <- proj.(old_x / 2)
-      y <- f(x)
-
-      if (fz.verbose) print(c(x, y))
-      history <- rbind(history, c("x" = x, "y" = y, "avg" = NA))
-
-      if (old_x == limits[1] & x == limits[1]) break
-    }
-    if (fz.verbose) print("finished decreasing")
-
-    if (!(x %in% limits)) {
       x <- (y * old_x - old_y * x) / (y - old_y)
       x <- proj.(x)
+    } else if (y == 0) {
+      x <- x
+    } else {
+      # decrease exponentially until changing sign of f
+      while (y > 0) {
+        old_y <- y
+        old_x <- x
+
+        x <- proj.(old_x / 2)
+        y <- f(x)
+
+        if (fz.verbose) print(c(x, y))
+        history <- rbind(history, c("x" = x, "y" = y, "avg" = Inf))
+
+        if (old_x == limits[1] & x == limits[1]) break
+      }
+      if (fz.verbose) print("finished decreasing")
+
+      if (!(x %in% limits)) {
+        x <- (y * old_x - old_y * x) / (y - old_y)
+        x <- proj.(x)
+      }
     }
   }
 
@@ -525,16 +633,16 @@ find_zero <- function(f, x.init = 10L, fz.verbose = FALSE, D = 1, gamma = .6,
   ## burn in
   y <- c(f(x[1]))
   if (fz.verbose) print(c(x[1], y[1]))
-  history <- rbind(history, c("x" = x, "y" = y, "avg" = NA))
+  history <- rbind(history, c("x" = x, "y" = y, "avg" = Inf))
 
   old_avg <- x[1]
   if (fz.verbose) print("start ruppert polyak averaging burn in")
   for (t in 2:burnin_dur) {
-    x[t] <- proj.(x[t - 1] - (D * (t - 1)^(-gamma)) * y[t - 1]) # proj.(a) max(1,round(a)) #########################
+    x[t] <- proj.(x[t - 1] - (D * (t - 1)^(-gamma)) * y[t - 1])
     y[t] <- f(x[t])
 
     if (fz.verbose) print(c(x[t], y[t]))
-    history <- rbind(history, c("x" = x[t], "y" = y[t], "avg" = NA))
+    history <- rbind(history, c("x" = x[t], "y" = y[t], "avg" = Inf))
   }
   old_x <- x[burnin_dur]
   old_y <- y[burnin_dur]
@@ -546,7 +654,7 @@ find_zero <- function(f, x.init = 10L, fz.verbose = FALSE, D = 1, gamma = .6,
   y <- c(old_y)
 
   if (fz.verbose) print(c(x[1], y[1]))
-  history <- rbind(history, c("x" = x, "y" = y, "avg" = NA))
+  history <- rbind(history, c("x" = x, "y" = y, "avg" = Inf))
 
   t <- 2 # burnin_dur %/% 2
   old_avg <- x[1]

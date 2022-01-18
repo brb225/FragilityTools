@@ -13,7 +13,8 @@ find_zero(
   burnin_dur = 16,
   eps = 0.1,
   proj = function(a) a,
-  limits = c(1, 9999999)
+  limits = c(1, 9999999),
+  init.step = TRUE
 )
 }
 \arguments{

@@ -8,7 +8,8 @@ bin.fi.greedy(
   crosstab,
   get.p,
   alpha = 0.05,
-  can.vary = matrix(rep(TRUE, 4), nrow = 2)
+  can.vary = matrix(rep(TRUE, 4), nrow = 2),
+  crosstab.offset = matrix(rep(0, 4), nrow = 2)
 )
 }
 \arguments{
@@ -20,6 +21,11 @@ bin.fi.greedy(
 
 \item{can.vary}{a 2x2 boolean matrix for whether each entry can decrease. See the
 \link{incidence fragility index} article for explanation.}
+
+\item{crosstab.offset}{a 2x2 contingency table with interventions on rows and outcomes on columns.
+The default has all entries equal to 0. These patients are not subject to modification, unlike crosstab,
+but they do contribute to the evaluation of the p value, like crosstab. Note, this is a variant of the
+'dont.consider' argument in greedy.fi}
 }
 \value{
 a list containing the signed fragility index, in addition to the modified contingency

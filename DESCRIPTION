@@ -1,10 +1,13 @@
 Package: FragilityTools
 Title: Toolbox For Patient Count Fragility Measures
-Version: 1.0.2
+Version: 1.0.4
 Authors@R: c(
     person("Baer", "Benjamin", email = "brb225@cornell.edu", role = c("aut", "cre")),
-    person("Wells", "Martin", email = "mtw1@cornell.edu", role = "ths"))
-Description: Calculates various fragility indices and related summaries.
+    person("Fremes", "Stephen", email = "Stephen.Fremes@sunnybrook.ca", role = "aut"),
+    person("Charlson", "Mary", email = "mecharl@med.cornell.edu", role = "aut"),
+    person("Gaudino", "Mario", email = "mfg9004@med.cornell.edu", role = "aut"),
+    person("Wells", "Martin", email = "mtw1@cornell.edu", role = "aut"))
+Description: Calculates various fragility measures and related summaries.
 License: use_gpl3_license()
 Encoding: UTF-8
 LazyData: true

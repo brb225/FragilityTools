@@ -63,7 +63,7 @@ the sample size calculation}
 \item{tau}{the quantile of FI to bound, default 1/2}
 
 \item{nsim}{the number of simulated draws to consider when estimating the power
-and expected fragility index quantile}
+and fragility index quantile}
 
 \item{eps}{a parameter to control the error. The smaller is it, the more precise the
 output but the longer the function will take to run.}

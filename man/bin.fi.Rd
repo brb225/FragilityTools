@@ -12,9 +12,11 @@ bin.fi(
   test = "fisher",
   alpha = 0.05,
   q = 0,
+  r = 0,
   verbose = FALSE,
   fi.start = NULL,
-  delta = NULL
+  delta = NULL,
+  nsim = 10
 )
 }
 \arguments{
@@ -36,14 +38,19 @@ Some alternatives are 'fisher.midp', 'pearson.chisq', 'ni.normal'.}
 
 \item{alpha}{a number for the size of test, default 0.05.}
 
-\item{q}{the minimum probability of allowable outcome modifications, defaults to 0 (allowing all modifications).
-Note that alg='original' or alg='original.bothdir' do not support this option.}
+\item{q}{the minimum probability of permitted outcome modifications, defaults to 0 (permitting all modifications).
+Note that alg='original' and alg='original.bothdir' do not support this option.}
+
+\item{r}{the minimum probability that a patient combination can reverse significance, default to 0 (reducing to the standard
+fragility index). Use alg='greedy' if r > 0.}
 
 \item{verbose}{a logical value for whether to print status updates while running}
 
 \item{fi.start}{the starting fragility index considered in the exact algorithm.}
 
 \item{delta}{the noninferiority margin for when test='ni.normal'}
+
+\item{nsim}{The number of simulations in the root finding algorithm when r>0, by default 10}
 }
 \value{
 a list containing the fragility index and other values, depending on which algorithm is specified.
