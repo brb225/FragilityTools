@@ -1,3 +1,15 @@
+#' @importFrom stats binomial complete.cases dhyper dist dnorm dpois dweibull fisher.test gaussian glm median model.frame optim
+#' @importFrom stats pchisq pnorm poisson predict pt pweibull qbeta qnorm qt quantile qweibull rbeta rbinom runif sd t.test uniroot
+#' @importFrom ggplot2 ggplot geom_segment geom_point geom_tile labs xlim scale_y_continuous scale_color_gradientn scale_fill_continuous
+#' @importFrom ggplot2 scale_fill_manual theme_bw scale_x_continuous
+#' @importFrom data.table as.data.table
+#' @importFrom extraDistr dbbinom rbbinom
+#' @importFrom BiasedUrn dFNCHypergeo
+#' @import mlbench
+#' @importFrom quantreg rq
+#' @importFrom rlang .data
+NULL
+
 #' Simulate independent draws from two independent Binomial models
 #'
 #' This function can be conveniently used in simulations such as a monte carlo
@@ -44,16 +56,16 @@ draw.binom <- function(ss, theta1 = .3, theta2 = .7,
 #' This is a function which is a wrapper around several general purpose functions to calculate fragility
 #' indices. Several algorithms and several methodologies can be employed to find various fragility indices
 #' for 2x2 tables. The function supports allowing only sufficiently likely modifications, as described in
-#' the article [Incidence fragility index].
+#' the Incidence fragility index article.
 #'
 #' @param crosstab a 2x2 contingency table, stored as a matrix or table. Either input a data table or both X and Y.
 #' @param X a dataframe representing the covariates. Either input a data table or both X and Y.
 #' @param Y a dataframe representing the responses. Either input a data table or both X and Y.
 #' @param alg a string specifying the FI algorithm, 'exact', 'original', 'original.bothdir', 'greedy', or 'hybrid'.
-#' The exact algorithm is described in the [Incidence fragility index] article. It will return the exact fragility
+#' The exact algorithm is described in the Incidence fragility index article. It will return the exact fragility
 #' index possibly at the cost of longer run time. The original algorithm runs the algorithm proposed by Walsh et al. (2014).
 #' The 'original.bothdir' algorithm runs a natural variant of the original algorithm which allows for searching in both directions
-#' of the chosen group. The greedy algorithm is described in [Generalized fragility index] and efficiently upper bounds
+#' of the chosen group. The greedy algorithm is described in the Generalized fragility index article and efficiently upper bounds
 #' the fragility index. The hybrid approach first runs the greedy algorithm and then finetunes the output similar to the exact algorithm.
 #' @param test a string specifying the test, defaulting to 'fisher' for the Fisher exact test.
 #' Some alternatives are 'fisher.midp', 'pearson.chisq', 'ni.normal'.
@@ -500,7 +512,7 @@ general.fi.samplesize <- function(min.fi = 10, min.power = .8,
 #' @param tau the FI quantile, by default 1/2
 #' @param algorithm A string, equal to 'walsh' to perform fragility index calculation using the original algorithm
 #' due to Walsh et al. (2014) or equal to 'greedy' to perform fragility index calculation using the greedy algorithm
-#' described in [Generalized fragility index].
+#' described in the Generalized fragility index article.
 #' @param get.p.val a function that inputs X and Y and returns a p value when algorithm is 'greedy' or that
 #' inputs a matrix when algorithm is 'walsh'.
 #' @param get.replacements a function which outputs a data frame containing all possible row replacements
@@ -756,7 +768,7 @@ get.rejection.rates <- function(get.p.val, get.sample.null = NULL, get.sample.al
 #' Calculate all of the incidence fragility indices
 #'
 #' The function is used to calculate the incidence fragility indices for every possible sufficiently likely threshold.
-#' Note, the incidence fragility indices are formally defined in the article [Incidence fragility index]. The function bin.fi
+#' Note, the incidence fragility indices are formally defined in the Incidence fragility index article. The function bin.fi
 #' in this package will calculate an incidence fragility index for a given threshold, and this function loops over bin.fi
 #' for relevant grid of sufficiently likely thresholds min.p (i.e. q). The function `incidence.plot` allows for a convenient
 #' visualization of these values.
@@ -874,14 +886,14 @@ incidence.plot <- function(out, ylab=latex2exp::TeX("Incidence fragility index $
   } else {
     plt.lims <- c(min.fi - 1, 0)
   }
-  ggplot() +
-    geom_segment(aes(x = min.p, y = fi, xend = minp.right, yend = fi), data = out_seg) +
-    geom_point(aes(x = min.p, y = fi), data = out_unfill, shape = 1) +
-    geom_point(aes(x = min.p, y = fi), data = out_fill) +
-    labs(x = latex2exp::TeX("Modification likelihood threshold $q$"),
+  ggplot2::ggplot() +
+    ggplot2::geom_segment(ggplot2::aes(x = .data$min.p, y = .data$fi, xend = .data$minp.right, yend = .data$fi), data = out_seg) +
+    ggplot2::geom_point(ggplot2::aes(x = .data$min.p, y = .data$fi), data = out_unfill, shape = 1) +
+    ggplot2::geom_point(ggplot2::aes(x = .data$min.p, y = .data$fi), data = out_fill) +
+    ggplot2::labs(x = latex2exp::TeX("Modification likelihood threshold $q$"),
          y = ylab) + # put in latex2exp::TeX
-    xlim(c(0, 1)) +
-    scale_y_continuous(limits = plt.lims)
+    ggplot2::xlim(c(0, 1)) +
+    ggplot2::scale_y_continuous(limits = plt.lims)
 }
 
 
@@ -905,7 +917,7 @@ incidence.plot <- function(out, ylab=latex2exp::TeX("Incidence fragility index $
 
 #' LTFU-aware fragility index calculator
 #'
-#' This function implements a calculation of the LTFU-aware fragility indices described in [LTFU fragility index].
+#' This function implements a calculation of the LTFU-aware fragility indices described in the LTFU fragility index article.
 #' These fragility indices consider the potential impact of patients who are lost to follow up.
 #'
 #'
@@ -1035,40 +1047,40 @@ ltfu.fi <- function(crosstab, ltfu, get.p,
 
   if (effect.size.plt) {
     plt.dat$es <- as.numeric(plt.dat$es)
-    plt <- ggplot(data=plt.dat[order(plt.dat$mode),],
-                  aes(x=g1/ltfu[1], y=g2/ltfu[2], fill=es))+
-      geom_tile(aes(color=log_prs), size=fig.size)+
-      scale_color_gradientn(name='Posterior \nprobability',
+    plt <- ggplot2::ggplot(data=plt.dat[order(plt.dat$mode),],
+                  ggplot2::aes(x=.data$g1/ltfu[1], y=.data$g2/ltfu[2], fill=.data$es))+
+      ggplot2::geom_tile(ggplot2::aes(color=.data$log_prs), size=fig.size)+
+      ggplot2::scale_color_gradientn(name='Posterior \nprobability',
                             colours=c("white","blue","black"),
                             breaks=c(maxpr/2, maxpr))+#n.breaks=3)+
-      scale_fill_continuous(name='Effect size', breaks=trunc(c(min(plt.dat$es), max(plt.dat$es))*1000)/1000,
+      ggplot2::scale_fill_continuous(name='Effect size', breaks=trunc(c(min(plt.dat$es), max(plt.dat$es))*1000)/1000,
                             low = "grey5", high = "orange")+
-      labs(x=xlab, y=ylab)+
-      theme_bw()+
-      scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
-      theme(legend.position='bottom')
+      ggplot2::labs(x=xlab, y=ylab)+
+      ggplot2::theme_bw()+
+      ggplot2::scale_x_continuous(expand = c(0, 0)) +
+      ggplot2::scale_y_continuous(expand = c(0, 0)) +
+      ggplot2::theme(legend.position='bottom')
   } else {
     plt.dat$sig <- as.factor(plt.dat$pval<alpha)
     levels(plt.dat$sig) <- c(FALSE, TRUE)
-    plt <- ggplot(data=plt.dat[order(plt.dat$mode),],
-                  aes(x=g1/ltfu[1], y=g2/ltfu[2], fill=sig)
+    plt <- ggplot2::ggplot(data=plt.dat[order(plt.dat$mode),],
+                  ggplot2::aes(x=.data$g1/ltfu[1], y=.data$g2/ltfu[2], fill=.data$sig)
     )+
-      geom_tile(aes(color=log_prs), size=fig.size)+#, width=ww, height=hh), size=ss)+#width=.182, height=.182), size=1.5)+
-      scale_color_gradientn(name='Posterior \nprobability',
+      ggplot2::geom_tile(ggplot2::aes(color=.data$log_prs), size=fig.size)+#, width=ww, height=hh), size=ss)+#width=.182, height=.182), size=1.5)+
+      ggplot2::scale_color_gradientn(name='Posterior \nprobability',
                             colours=c("white","blue","black"),
                             breaks=c(maxpr/2, maxpr))+#n.breaks=3)+
-      scale_fill_manual(values=c("#999999", "#E69F00"),
+      ggplot2::scale_fill_manual(values=c("#999999", "#E69F00"),
                         name="Statistical \nsignificance",
                         labels=c(paste0("p > ", plt.alpha), #>=
                                  paste0("p < ", plt.alpha)
                         ),
                         drop=FALSE)+
-      labs(x=xlab, y=ylab)+
-      theme_bw()+
-      scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
-      theme(legend.position='bottom')
+      ggplot2::labs(x=xlab, y=ylab)+
+      ggplot2::theme_bw()+
+      ggplot2::scale_x_continuous(expand = c(0, 0)) +
+      ggplot2::scale_y_continuous(expand = c(0, 0)) +
+      ggplot2::theme(legend.position='bottom')
   }
 
   # posterior probability of being significant
@@ -1158,7 +1170,7 @@ ltfu.fi <- function(crosstab, ltfu, get.p,
 #'
 #' This is a very general function which approximately calculates a fragility index
 #' using covariates, response(s), and any p value function. It's described in detail
-#' in the article [Generalized fragility index].
+#' in the Generalized fragility index article.
 #'
 #' This is a general function which uses a greedy algorithm to compute a fragility
 #' index.The function arguments accept data from two sources: covariates in X and
@@ -1261,7 +1273,7 @@ greedy.fi <- function(X, Y,
       holder <- get.replacements(YY.red[i, ], XX.red[i, ], row.names(YY.red)[i], Y, X)
 
       ## make each row (ie each combination) a separate entry of a list
-      if (nrow(holder>0)) {
+      if (nrow(holder) > 0) {
         repl[[i]] <- split(holder, seq(nrow(holder)))
         for (j in 1:length(repl[[i]])) { # fix the row names to be the same as original
           rownames(repl[[i]][[j]]) <- rownames(YY.red)[i]
@@ -1427,9 +1439,10 @@ greedy.fi <- function(X, Y,
 #'
 #' @examples
 #' dat <- get.survival.data(100, 6)
-#' cl <- parallel::makeCluster(parallel::detectCores() - 2)
+#' #cl <- parallel::makeCluster(parallel::detectCores() - 2)
+#' cl <- NULL # parallel is having some issues in CRAN checks 
 #' out <- surv.fi(dat$time, dat$status, dat$group, q=0.3, cl = cl, verbose=TRUE)
-#' parallel::stopCluster(cl)
+#' #parallel::stopCluster(cl)
 #'
 #' @export
 surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
@@ -1536,6 +1549,12 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
   }
 
   get.replacements <- function(y, x, rn, Y, X) { # recall that y = list(time, status)
+    safe_root <- function(fun, interval) {
+      res <- tryCatch(uniroot(f = fun, interval = interval), error = function(e) NULL)
+      if (is.null(res)) return(NA_real_)
+      res$root
+    }
+
     # get weibull parameters
     # event
     k.event <- survreg2weib_shape(mod.event$scale)
@@ -1568,28 +1587,34 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
         el.event <- mode.event
       } else if (y.event > mode.event) { # to the left
         #print(c(0, mode.event))
-        el.event <- uniroot(f=function(xx) dweibull(xx, k.event, lam.event)-dweibull(y.event, k.event, lam.event),
-                            interval=c(0, mode.event))$root
+        el.event <- safe_root(f=function(xx) dweibull(xx, k.event, lam.event)-dweibull(y.event, k.event, lam.event),
+                              interval=c(0, mode.event))
       } else {
         #print(c(mode.event, 1000))
         msd.event <- weib_meansd(k.event, lam.event)
-        el.event <- uniroot(f=function(xx) dweibull(xx, k.event, lam.event)-dweibull(y.event, k.event, lam.event),
-                            interval=c(mode.event, msd.event[1]+5*msd.event[2]))$root # hardcoded!!
+        el.event <- safe_root(f=function(xx) dweibull(xx, k.event, lam.event)-dweibull(y.event, k.event, lam.event),
+                              interval=c(mode.event, msd.event[1]+5*msd.event[2])) # hardcoded!!
       }
-      cdf.el.event <- pweibull(el.event, k.event, lam.event)
-
-      if (abs(cdf.event - cdf.el.event) >= q) { # actual region is inside the interval found
-        if (y.event > mode.event) { # to the left
-          lower.lim.event <- qweibull(cdf.event-q, k.event, lam.event)
-          upper.lim.event <- y.event
-        } else {
-          lower.lim.event <- y.event
-          upper.lim.event <- qweibull(cdf.event+q, k.event, lam.event)
-        }
-      } else { # have to do an actual HDR
-        hdr.event <- unlist(as.data.frame(stat.extend::HDR.weibull(q, k.event, lam.event))[1:2])
+      if (is.na(el.event)) {
+        hdr.event <- as.numeric(HDInterval::hdi(qweibull, credMass = q, shape = k.event, scale = lam.event))
         lower.lim.event <- hdr.event[1]
         upper.lim.event <- hdr.event[2]
+      } else {
+        cdf.el.event <- pweibull(el.event, k.event, lam.event)
+
+        if (abs(cdf.event - cdf.el.event) >= q) { # actual region is inside the interval found
+          if (y.event > mode.event) { # to the left
+            lower.lim.event <- qweibull(cdf.event-q, k.event, lam.event)
+            upper.lim.event <- y.event
+          } else {
+            lower.lim.event <- y.event
+            upper.lim.event <- qweibull(cdf.event+q, k.event, lam.event)
+          }
+        } else { # have to do an actual HDR
+          hdr.event <- as.numeric(HDInterval::hdi(qweibull, credMass = q, shape = k.event, scale = lam.event))
+          lower.lim.event <- hdr.event[1]
+          upper.lim.event <- hdr.event[2]
+        }
       }
     }
 
@@ -1609,29 +1634,35 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
         el.censor <- mode.censor
       } else if (y.censor > mode.censor) { # cover to the left
         #print(c(0, mode.censor))
-        el.censor <- uniroot(f=function(xx) dweibull(xx, k.censor, lam.censor)-dweibull(y.censor, k.censor, lam.censor),
-                             interval=c(0, mode.censor))$root
+        el.censor <- safe_root(f=function(xx) dweibull(xx, k.censor, lam.censor)-dweibull(y.censor, k.censor, lam.censor),
+                               interval=c(0, mode.censor))
         cvrg.censor <- cdf.censor - pweibull(el.censor, k.censor, lam.censor)
       } else {
         #print(c(mode.censor, 1000))
         msd.censor <- weib_meansd(k.event, lam.event)
-        el.censor <- uniroot(f=function(xx) dweibull(xx, k.censor, lam.censor)-dweibull(y.censor, k.censor, lam.censor),
-                             interval=c(mode.censor, msd.censor[1]+5*msd.censor[2]))$root # hardcoded!!
+        el.censor <- safe_root(f=function(xx) dweibull(xx, k.censor, lam.censor)-dweibull(y.censor, k.censor, lam.censor),
+                               interval=c(mode.censor, msd.censor[1]+5*msd.censor[2])) # hardcoded!!
       }
-      cdf.el.censor <- pweibull(el.censor, k.censor, lam.censor)
-
-      if (abs(cdf.censor - cdf.el.censor) >= q) { # actual region is inside the interval found
-        if (y.censor > mode.censor) { # to the left
-          lower.lim.censor <- qweibull(cdf.censor-q, k.censor, lam.censor)
-          upper.lim.censor <- y.censor
-        } else {
-          lower.lim.censor <- y.censor
-          upper.lim.censor <- qweibull(cdf.censor+q, k.censor, lam.censor)
-        }
-      } else { # have to do an actual HDR
-        hdr.censor <- unlist(as.data.frame(stat.extend::HDR.weibull(q, k.censor, lam.censor))[1:2])
+      if (is.na(el.censor)) {
+        hdr.censor <- as.numeric(HDInterval::hdi(qweibull, credMass = q, shape = k.censor, scale = lam.censor))
         lower.lim.censor <- hdr.censor[1]
         upper.lim.censor <- hdr.censor[2]
+      } else {
+        cdf.el.censor <- pweibull(el.censor, k.censor, lam.censor)
+
+        if (abs(cdf.censor - cdf.el.censor) >= q) { # actual region is inside the interval found
+          if (y.censor > mode.censor) { # to the left
+            lower.lim.censor <- qweibull(cdf.censor-q, k.censor, lam.censor)
+            upper.lim.censor <- y.censor
+          } else {
+            lower.lim.censor <- y.censor
+            upper.lim.censor <- qweibull(cdf.censor+q, k.censor, lam.censor)
+          }
+        } else { # have to do an actual HDR
+          hdr.censor <- as.numeric(HDInterval::hdi(qweibull, credMass = q, shape = k.censor, scale = lam.censor))
+          lower.lim.censor <- hdr.censor[1]
+          upper.lim.censor <- hdr.censor[2]
+        }
       }
     }
 
@@ -1856,7 +1887,7 @@ surv.fi <- function(time, status, group, test = "logrank", q = 0.5,
 #' @param cl A parallel cluster for faster calculation in greedy.fi, by default NULL
 #'
 #' @return The output of greedy.fi (a list) with an additional element which has the
-#' overall data (relative) likelihood, as described in the article [Generalized fragility index].
+#' overall data (relative) likelihood, as described in the Generalized fragility index article.
 #'
 #' @examples
 #' set.seed(123456790)
@@ -2087,7 +2118,7 @@ binmeta.fi <- function(data, restr.study = NULL, method = "MH", sm = "RR",
 
     p <- meta::metabin(event.e, n.e, event.c, n.c,
                        data = dat, method = method,
-                       sm = sm, comb.random = TRUE, comb.fixed = FALSE,
+                       sm = sm, random = TRUE, common = FALSE,
                        overall.hetstat = FALSE
     )$pval.random
     return(p)
@@ -2156,9 +2187,17 @@ glm.fi <- function(formula, family, data, max.step = 1, alpha = .05, cl = NULL, 
   if (family$family != gaussian()$family & family$family != binomial()$family) stop("Family must be binomial or gaussian.")
 
   if (family$family == binomial()$family) {
-    get.replacements <- list(function(y, x, rn, Y, X) setdiff(unique(Y[[1]]), y)) # recall Y is left unchanged in the algorithm
+    get.replacements <- function(y, x, rn, Y, X) {
+      out <- data.frame(setdiff(unique(Y[[1]]), y[[1]]), check.names = FALSE)
+      names(out) <- colnames(Y)
+      out
+    } # recall Y is left unchanged in the algorithm
   } else if (family$family == gaussian()$family) {
-    get.replacements <- list(function(y, x, rn, Y, X) y + c(-1, 1) * max.step) # recall Y is left unchanged in the algorithm
+    get.replacements <- function(y, x, rn, Y, X) {
+      out <- data.frame(y[[1]] + c(-1, 1) * max.step, check.names = FALSE)
+      names(out) <- colnames(Y)
+      out
+    } # recall Y is left unchanged in the algorithm
   }
 
   out <- glm(formula, family, data)
@@ -2198,7 +2237,7 @@ glm.fi <- function(formula, family, data, max.step = 1, alpha = .05, cl = NULL, 
 #' @param alpha a numberic for the significance threshold, by default 0.05
 #'
 #' @return The output of greedy.fi (a list) with an additional element which has the
-#' per-patient modification likelihood bound, as in the article [Generalized fragility index].
+#' per-patient modification likelihood bound, as in the article Generalized fragility index.
 #'
 #' @examples
 #' set.seed(1234567890)

@@ -40,7 +40,7 @@ the limit from the right.
 }
 \description{
 The function is used to calculate the incidence fragility indices for every possible sufficiently likely threshold.
-Note, the incidence fragility indices are formally defined in the article \link{Incidence fragility index}. The function bin.fi
+Note, the incidence fragility indices are formally defined in the Incidence fragility index article. The function bin.fi
 in this package will calculate an incidence fragility index for a given threshold, and this function loops over bin.fi
 for relevant grid of sufficiently likely thresholds min.p (i.e. q). The function \code{incidence.plot} allows for a convenient
 visualization of these values.

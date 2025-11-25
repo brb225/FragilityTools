@@ -72,7 +72,10 @@ references:
     given: Stephen E.
   - family: Wells
     given: Martin T.
-  container-title: Proceedings of the National Academy of Sciences, in press
+  container-title: Proceedings of the National Academy of Sciences
+  volume: 118
+  number: 49
+  page: e2105254118
   issued:
   - year: 2021
   type: article-journal
@@ -89,9 +92,30 @@ references:
     given: Mary
   - family: Wells
     given: Martin T.
-  container-title: BMC Medical Research Methodology, in press
+  container-title: BMC Medical Research Methodology
+  volume: 139
+  page: 199-209
   issued:
   - year: 2021
+  type: article-journal
+- id: baer2022rir
+  title: 'Three comments on the RIR method'
+  author:
+  - family: Baer
+    given: Benjamin R.
+  - family: Charlson
+    given: Mary
+  - family: Fremes
+    given: Stephen E.
+  - family: Gaudino
+    given: Mario
+  - family: Wells
+    given: Martin T.
+  container-title: Journal of Clinical Epidemiology
+  volume: 146
+  page: 123-124
+  issued:
+  - year: 2022
   type: article-journal
 ---
 
@@ -108,7 +132,7 @@ knitr::opts_chunk$set(
 
 # FragilityTools
 
-The goal of FragilityTools is to provide a toolbox for researchers interested in the fragility index. The toolbox covers methodologies developed across three articles [@baer2021samplesize; @baer2021likely; @baer2021ltfu].
+The goal of FragilityTools is to provide a toolbox for researchers interested in the fragility index. The toolbox covers methodologies developed across several journal articles [@walsh2014fragility; @baer2021samplesize; @baer2021likely; @baer2021ltfu; @baer2022rir].
 
 ## Installation
 

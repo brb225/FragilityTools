@@ -61,7 +61,7 @@ LTFU-aware fragility index. The second `info``, shows the outcome modifications 
 LTFU-aware fragility index possible.
 }
 \description{
-This function implements a calculation of the LTFU-aware fragility indices described in \link{LTFU fragility index}.
+This function implements a calculation of the LTFU-aware fragility indices described in the LTFU fragility index article.
 These fragility indices consider the potential impact of patients who are lost to follow up.
 }
 \examples{

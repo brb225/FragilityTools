@@ -23,7 +23,7 @@ by default FALSE}
 }
 \value{
 The output of greedy.fi (a list) with an additional element which has the
-overall data (relative) likelihood, as described in the article \link{Generalized fragility index}.
+overall data (relative) likelihood, as described in the Generalized fragility index article.
 }
 \description{
 This function returns a fragility index (and accomponying information) for the one sample t test,

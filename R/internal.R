@@ -13,7 +13,7 @@
 #' @param alpha a scalar numeric for the significance cutoff
 #' @param fi.start The starting fi considered, by default 1.
 #' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
-#' [incidence fragility] article for explanation.
+#' incidence fragility article for explanation.
 #' @param start.reversed a boolean for whether the start.fi value already reverses
 #' statistical significance. Note, FALSE just means unknown. (note: in a future update, this
 #' will be true/false/na)
@@ -147,7 +147,9 @@ bin.fi.exact2 <- function(crosstab, get.p, alpha = 0.05, fi.start = 1,
     }
 
     # if(is.infinite(p.next) | p.current==p.next) { # this is the problem!!
-    matequal <- function(x, y) is.matrix(x) && is.matrix(y) && dim(x) == dim(y) && all(x == y)
+    matequal <- function(x, y) {
+      is.matrix(x) && is.matrix(y) && identical(dim(x), dim(y)) && all(x == y)
+    }
     if (fi.next == 0 | fi.next > highest.f | (direction == 1 & matequal(f.mat.current, f.mat.next))) { # (m.ind==1&p.next>p.current) | (m.ind==2&p.next<p.current)) {
       fi.final <- Inf
       patients <- NA
@@ -383,7 +385,7 @@ bin.fi.walsh <- function(crosstab, get.p, alpha = 0.05, dir='both', group='event
 #' @param get.p a function inputting a table and outputting a p-value
 #' @param alpha a scalar numeric for the significance cutoff, by default 0.05
 #' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
-#' [incidence fragility index] article for explanation.
+#' incidence fragility index article for explanation.
 #' @param crosstab.offset a 2x2 contingency table with interventions on rows and outcomes on columns.
 #' The default has all entries equal to 0. These patients are not subject to modification, unlike crosstab,
 #' but they do contribute to the evaluation of the p value, like crosstab. Note, this is a variant of the
@@ -467,7 +469,7 @@ bin.fi.greedy <- function(crosstab, get.p, alpha=.05,
 #'
 #' @param crosstab a 2x2 contingency table with interventions on rows and outcomes on columns
 #' @param can.vary a 2x2 boolean matrix for whether each entry can decrease. See the
-#' [incidence fragility index] article for explanation.
+#' incidence fragility index article for explanation.
 #' @param get.p a function that inputs a matrix and returns a p value
 #' @param r the index of the stochastic fragility index, by default 0.5. Having r=0 is equivalent to the generalized fragility
 #' index and having r=1 means that all patient combinations of the output size can reverse significance.
@@ -771,6 +773,7 @@ get_beta_parameters <- function(po, mult=1.3) {
 #'
 #' @examples
 #' dat <- FragilityTools:::get.survival.data(n = 100, num.times = 6)
+#' @export
 get.survival.data <- function(n, num.times, p1 = NULL, p2 = NULL) {
   # roughly 50/50 in control and treatment
   dat <- data.frame(person_id = 1:n, group = sample(c("control", "treatment"), n, TRUE), stringsAsFactors = FALSE)
@@ -898,7 +901,7 @@ normal.sl <- function(y, y.mod) {
 #' y <- rpois(100, 1)
 #' y.mod <- rpois(100, 1.2) # should be returned from an FI procedure
 #' FragilityTools:::poisson.regr.sl(y, y.mod, 0, matrix(rnorm(100), ncol=100))
-poisson.regr.sl <- function(y, ymod, hatbeta, Xregr) { # we have to do glm because knowing the median (i.e. qr) doesn't tell u about the whole distribution
+poisson.regr.sl <- function(y, y.mod, hatbeta, Xregr) { # we have to do glm because knowing the median (i.e. qr) doesn't tell u about the whole distribution
   eta.pois <- apply(t(hatbeta*t(cbind(1,Xregr))),1,sum)
   empirical.mean <- poisson()$linkinv(eta.pois)
 

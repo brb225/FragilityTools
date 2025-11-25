@@ -20,7 +20,7 @@ bin.fi.greedy(
 \item{alpha}{a scalar numeric for the significance cutoff, by default 0.05}
 
 \item{can.vary}{a 2x2 boolean matrix for whether each entry can decrease. See the
-\link{incidence fragility index} article for explanation.}
+incidence fragility index article for explanation.}
 
 \item{crosstab.offset}{a 2x2 contingency table with interventions on rows and outcomes on columns.
 The default has all entries equal to 0. These patients are not subject to modification, unlike crosstab,

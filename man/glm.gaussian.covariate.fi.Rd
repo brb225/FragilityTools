@@ -32,7 +32,7 @@ contain the covariate which is subject to modification.}
 }
 \value{
 The output of greedy.fi (a list) with an additional element which has the
-per-patient modification likelihood bound, as in the article \link{Generalized fragility index}.
+per-patient modification likelihood bound, as in the article Generalized fragility index.
 }
 \description{
 This function returns a fragility index (and accompanying information) for an interesting fragility index

@@ -24,7 +24,7 @@ bin.fi.exact2(
 \item{fi.start}{The starting fi considered, by default 1.}
 
 \item{can.vary}{a 2x2 boolean matrix for whether each entry can decrease. See the
-\link{incidence fragility} article for explanation.}
+incidence fragility article for explanation.}
 
 \item{start.reversed}{a boolean for whether the start.fi value already reverses
 statistical significance. Note, FALSE just means unknown. (note: in a future update, this

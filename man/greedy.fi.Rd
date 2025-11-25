@@ -56,7 +56,7 @@ threshold}
 \description{
 This is a very general function which approximately calculates a fragility index
 using covariates, response(s), and any p value function. It's described in detail
-in the article \link{Generalized fragility index}.
+in the Generalized fragility index article.
 }
 \details{
 This is a general function which uses a greedy algorithm to compute a fragility

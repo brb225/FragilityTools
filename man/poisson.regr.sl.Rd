@@ -4,16 +4,16 @@
 \alias{poisson.regr.sl}
 \title{Calculate level of smallest HDR which contains the modified observation}
 \usage{
-poisson.regr.sl(y, ymod, hatbeta, Xregr)
+poisson.regr.sl(y, y.mod, hatbeta, Xregr)
 }
 \arguments{
 \item{y}{a numeric vector of outcomes}
 
+\item{y.mod}{a numeric vector of outcomes after the fragility index modification}
+
 \item{hatbeta}{a numeric vector of estimated coefficients}
 
 \item{Xregr}{a numeric matrix of covariates used to explain the outcomes}
-
-\item{y.mod}{a numeric vector of outcomes after the fragility index modification}
 }
 \value{
 a scalar numeric: a ratio of the conditional likilihoods in y and y.mod, estimated

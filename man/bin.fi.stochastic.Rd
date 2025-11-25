@@ -24,7 +24,7 @@ bin.fi.stochastic(
 \item{get.p}{a function that inputs a matrix and returns a p value}
 
 \item{can.vary}{a 2x2 boolean matrix for whether each entry can decrease. See the
-\link{incidence fragility index} article for explanation.}
+incidence fragility index article for explanation.}
 
 \item{r}{the index of the stochastic fragility index, by default 0.5. Having r=0 is equivalent to the generalized fragility
 index and having r=1 means that all patient combinations of the output size can reverse significance.}

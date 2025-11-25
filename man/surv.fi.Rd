@@ -52,8 +52,9 @@ for survival data. The function uses a log rank test by default.
 }
 \examples{
 dat <- get.survival.data(100, 6)
-cl <- parallel::makeCluster(parallel::detectCores() - 2)
+#cl <- parallel::makeCluster(parallel::detectCores() - 2)
+cl <- NULL # parallel is having some issues in CRAN checks 
 out <- surv.fi(dat$time, dat$status, dat$group, q=0.3, cl = cl, verbose=TRUE)
-parallel::stopCluster(cl)
+#parallel::stopCluster(cl)
 
 }

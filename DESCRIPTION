@@ -1,6 +1,6 @@
 Package: FragilityTools
 Title: Toolbox For Patient Count Fragility Measures
-Version: 1.0.4
+Version: 1.0.5
 Authors@R: c(
     person("Baer", "Benjamin", email = "brb225@cornell.edu", role = c("aut", "cre")),
     person("Fremes", "Stephen", email = "Stephen.Fremes@sunnybrook.ca", role = "aut"),
@@ -8,15 +8,14 @@ Authors@R: c(
     person("Gaudino", "Mario", email = "mfg9004@med.cornell.edu", role = "aut"),
     person("Wells", "Martin", email = "mtw1@cornell.edu", role = "aut"))
 Description: Calculates various fragility measures and related summaries.
-License: use_gpl3_license()
+License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.3
 Imports:
     survRM2,
     survival,
-    fastlogranktest,
     parallel,
     plyr,
     dplyr,
@@ -25,8 +24,11 @@ Imports:
     ggplot2,
     latex2exp,
     quantreg,
-    stat.extend,
-    mlbench
+    HDInterval,
+    mlbench,
+    data.table,
+    extraDistr,
+    rlang
 Suggests: 
     knitr,
     rmarkdown,

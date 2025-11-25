@@ -64,7 +64,7 @@ output but the longer the function will take to run.}
 
 \item{algorithm}{A string, equal to 'walsh' to perform fragility index calculation using the original algorithm
 due to Walsh et al. (2014) or equal to 'greedy' to perform fragility index calculation using the greedy algorithm
-described in \link{Generalized fragility index}.}
+described in the Generalized fragility index article.}
 
 \item{gamma}{the power of n^{-1} in the gradient descent in the Polyak-Ruppert averaging.
 The default is 0.60.}
